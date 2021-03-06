@@ -20,7 +20,6 @@ if [ ! -d ${path_assimp_build} ]; then
 	cd ${path_assimp_build}
 	cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=/usr/bin/clang++-11 -DCMAKE_C_COMPILER=/usr/bin/clang-11 -DCMAKE_INSTALL_PREFIX=/usr -G Ninja ..
 	cd ..
-	find . -maxdepth 1 ! -name 'build' -exec rm -rf {} \;
 fi
 
 cd ${path_assimp_build}
