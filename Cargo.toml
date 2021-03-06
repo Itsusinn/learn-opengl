@@ -1,0 +1,23 @@
+[package]
+name = "another"
+version = "0.1.0"
+authors = ["Itsusinn奕䜣 <itsusinn@foxmail.com>"]
+edition = "2018"
+
+[dependencies]
+sdl2 = { version = "0.34.3", features = ["bundled", "static-link"] }
+gl = { path = "lib/gl" }
+render_gl_derive = { path = "render_gl_derive" }
+thiserror = "1.0"
+anyhow = "1.0"
+vec-2-10-10-10 = "0.1.2"
+nalgebra = "0.16"
+russimp = "0.1.6"
+#stb = "0.3.3"
+
+[build-dependencies]
+walkdir = "2.3.1"
+
+[features]
+gl_debug = ["gl/debug"]
+
