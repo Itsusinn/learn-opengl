@@ -11,7 +11,7 @@ render_gl_derive = { path = "render_gl_derive" }
 thiserror = "1.0"
 anyhow = "1.0"
 vec-2-10-10-10 = "0.1.2"
-nalgebra = "0.27.1"
+nalgebra = "0.16.7"
 stb_image = "0.2.3"
 #russimp = "0.2.0"
 
