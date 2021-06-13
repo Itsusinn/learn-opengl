@@ -30,10 +30,7 @@ impl Program {
       res:&Resources,
       name:&str
    ) -> Result<Program, Error> {
-      const POSSIBLE_EXT: [&str; 2] = [
-         ".vert",
-         ".frag",
-      ];
+      const POSSIBLE_EXT: [&str; 2] = [".vert",".frag"];
       let shaders = POSSIBLE_EXT.iter()
          .map(|file_extension| {
             Shader::from_res(
@@ -125,7 +122,7 @@ impl Shader {
          })
          .map(|&(_,kind) | kind)
          .ok_or_else( || Error::CanNotDetermineShaderTypeForResource {
-            name: format!("Can not determine shader type for resource {}", name)
+            name: format!("无法判断给定resource的渲染器类型 {}", name)
          })?;
 
       let source = res.load_cstring(name)

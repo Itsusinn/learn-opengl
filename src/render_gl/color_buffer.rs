@@ -6,7 +6,7 @@ pub struct ColorBuffer {
 }
 
 impl ColorBuffer {
-    /// constructor function
+    ///  构造方法
     pub fn from_color(color: na::Vector3<f32>) -> ColorBuffer {
         ColorBuffer {
             color: color.fixed_resize::<na::U4, na::U1>(1.0),

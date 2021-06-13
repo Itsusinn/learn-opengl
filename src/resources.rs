@@ -4,9 +4,12 @@ use std::io::{self, Read};
 use std::ffi::CString;
 use thiserror::Error;
 
+//
+//*************Error Message
+//
 #[derive(Debug,Error)]
 pub enum Error {
-   #[error("I/O error")]
+   #[error("I/O 错误")]
    IO(#[from] io::Error),
    #[error("Failed to read CString from file that contains 0")]
    FileContainsNil,
@@ -14,6 +17,9 @@ pub enum Error {
    FailedToGetExePath
 }
 
+//
+//*************Resources
+//
 pub struct Resources {
    root_path: PathBuf
 }
@@ -35,7 +41,6 @@ impl Resources {
          root_path: exe_path.join(rel_path)
       })
    }
-
    pub fn load_cstring(
       &self,
       resource_name: &str
@@ -49,7 +54,7 @@ impl Resources {
       );
       file.read_to_end(&mut buffer)?;
 
-      // check for nul byte
+      //  检查空字符'\0'
       if buffer.iter().any(|i| *i == 0) {
          return Err(Error::FileContainsNil);
       }
@@ -63,8 +68,11 @@ fn resource_name_to_path(
    location: &str
 ) -> PathBuf {
    let mut path:PathBuf = root_dir.into();
+
    for part in location.split('/') {
-      path = path.join(part);
+      // path.join(part)
+      path = path.join(part)
    }
+
    path
 }
