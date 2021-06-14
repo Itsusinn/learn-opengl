@@ -5,19 +5,26 @@ authors = ["Itsusinn奕䜣 <itsusinn@foxmail.com>"]
 edition = "2018"
 
 [dependencies]
+# GL-Framework&UI
 sdl2 = { version = "0.34.3", features = ["bundled", "static-link"] }
-gl = { path = "lib/gl" }
-render_gl_derive = { path = "render_gl_derive" }
+egui = "0.12.0"
+egui_sdl2_gl =  { path="lib/egui_sdl2_gl" }
+# GL
+another-gl = { path = "lib/another_gl" }
+render_gl_derive = { path = "lib/render_gl_derive" }
+# error-handling
 thiserror = "1.0"
 anyhow = "1.0"
+# math
 vec-2-10-10-10 = "0.1.2"
 nalgebra = "0.16.7"
+# assests
 stb_image = "0.2.3"
-#russimp = "0.2.0"
+russimp = "0.2.0"
 
 [build-dependencies]
 walkdir = "2.3.1"
 
 [features]
-gl_debug = ["gl/debug"]
+gl_debug = ["another-gl/debug"]
 

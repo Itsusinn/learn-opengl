@@ -2,4 +2,4 @@
 *.lock
 *.iml
 /.idea
-*/target
+lib/*/target

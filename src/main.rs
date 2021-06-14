@@ -1,9 +1,13 @@
-extern crate gl;
+extern crate another_gl as gl;
 extern crate sdl2;
 extern crate nalgebra as na;
+
 #[macro_use] extern crate render_gl_derive;
 
 use std::rc::Rc;
+use std::time::Instant;
+use egui::{Pos2, RawInput, Rect, vec2,Color32};
+use egui_sdl2_gl as egui_backend;
 use crate::resources::Resources;
 use std::path::Path;
 use sdl2::event::{Event, WindowEvent};
@@ -38,6 +42,10 @@ fn main() -> Result<(),anyhow::Error>{
    let _gl_context = window.gl_create_context()
       .map_err(|msg| anyhow!("创建GL上下文失败: {}",msg))?;
 
+   let mut painter = egui_backend::Painter::new(&video_subsystem, 800, 600);
+   let mut egui_ctx = egui::CtxRef::default();
+   let ui_zoom = 2.0;
+
    let gl: Rc<gl::Gl> = Rc::new(
       gl::Gl::load_with(|s| {
          video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void
@@ -46,6 +54,21 @@ fn main() -> Result<(),anyhow::Error>{
 
    let mut event_pump = sdl_context.event_pump()
       .map_err(|msg| anyhow!("事件轮询器获取失败: {}",msg))?;
+
+   //  fixme:查明PPI,DPI的换算公式
+   let native_pixels_per_point = 96f32 / video_subsystem.display_dpi(0).unwrap().0;
+
+   let mut egui_input_state = egui_backend::EguiInputState::new(RawInput {
+      screen_rect: Some(Rect::from_min_size(
+          Pos2::new(0f32, 0f32),
+          vec2(800 as f32, 600 as f32) / native_pixels_per_point,
+      )),
+      pixels_per_point: Some(native_pixels_per_point),
+      ..Default::default()
+  });
+  let start_time = Instant::now();
+  // srgba 它是screen rgba的缩写吗？
+  let mut srgba: Vec<Color32> = Vec::new();
 
    let mut viewport =
            render_gl::Viewport::for_window(900,700);
@@ -77,9 +100,15 @@ fn main() -> Result<(),anyhow::Error>{
             _ => {}
          }
       }
+      egui_input_state.input.time = Some(start_time.elapsed().as_secs_f64());
+      egui_ctx.begin_frame(egui_input_state.input.take());
+
+      egui_input_state.input.pixels_per_point = Some(native_pixels_per_point);
+
       unsafe {
          gl.Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
       }
+      color_buffer.clear(&gl);
       triangle.render(&gl);
       window.gl_swap_window()
    };
