@@ -1,5 +1,5 @@
 use nalgebra as na;
-use gl;
+use another_gl as gl;
 
 pub struct ColorBuffer {
     pub color: na::Vector4<f32>,
@@ -17,15 +17,10 @@ impl ColorBuffer {
         self.color = color.fixed_resize::<na::U4, na::U1>(1.0);
     }
 
-    pub fn set_used(&self, gl: &gl::Gl) {
-        unsafe {
-            gl.ClearColor(self.color.x, self.color.y, self.color.z, 1.0);
-        }
-    }
-
     pub fn clear(&self, gl: &gl::Gl) {
+        let color = self.color;
         unsafe {
-            gl.Clear(gl::COLOR_BUFFER_BIT);
+            gl.ClearColor(color.x,color.y,color.z,color.w);
         }
     }
 }

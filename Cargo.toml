@@ -10,7 +10,7 @@ sdl2 = { version = "0.34.3", features = ["bundled", "static-link"] }
 egui = "0.12.0"
 egui_sdl2_gl =  { path="lib/egui_sdl2_gl" }
 # GL
-another-gl = { path = "lib/another_gl" }
+another_gl = { path = "lib/another_gl" }
 render_gl_derive = { path = "lib/render_gl_derive" }
 # error-handling
 thiserror = "1.0"
@@ -26,5 +26,5 @@ russimp = "0.2.0"
 walkdir = "2.3.1"
 
 [features]
-gl_debug = ["another-gl/debug"]
+gl_debug = ["another_gl/debug"]
 

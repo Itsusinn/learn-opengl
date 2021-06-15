@@ -1,3 +1,4 @@
+use another_gl as gl;
 use gl::types::{GLuint, GLvoid, GLint};
 extern crate vec_2_10_10_10;
 

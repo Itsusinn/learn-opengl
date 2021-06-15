@@ -1,14 +1,14 @@
+use another_gl as gl;
 use crate::render_gl;
 use crate::render_gl::{buffer, data};
 use crate::resources::Resources;
-
 #[derive(VertexAttribPointers)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
 struct Vertex {
-    #[location = "0"]
+    #[location = 0]
     pos: data::f32_f32_f32,
-    #[location = "1"]
+    #[location = 1]
     clr: data::u2_u10_u10_u10_rev_float,
 }
 
@@ -74,5 +74,7 @@ impl Triangle {
                 3
             );
         }
+        self.vao.unbind();
+        self.program.detach();
     }
 }

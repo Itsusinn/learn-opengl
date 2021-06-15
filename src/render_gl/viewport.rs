@@ -1,4 +1,4 @@
-use gl;
+use another_gl as gl;
 ///视窗变换
 pub struct Viewport {
     pub x: i32,
@@ -20,7 +20,7 @@ impl Viewport {
         self.h = h;
     }
 
-    pub fn set_used(&self, gl: &gl::Gl) {
+    pub fn refresh(&self, gl: &gl::Gl) {
         unsafe {
             gl.Viewport(self.x, self.y, self.w, self.h);
         }

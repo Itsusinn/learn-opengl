@@ -1,4 +1,4 @@
-use gl;
+use another_gl as gl;
 use gl::types::*;
 
 pub trait BufferType {

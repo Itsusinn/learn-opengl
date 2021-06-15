@@ -1,3 +1,4 @@
+use another_gl as gl;
 use gl::types::*;
 use std::ffi::{CStr, CString};
 use crate::resources::Resources;
@@ -88,6 +89,9 @@ impl Program {
    }
    pub fn set_used(&self) {
       unsafe { self.gl.UseProgram(self.id) }
+   }
+   pub fn detach(&self){
+      unsafe { self.gl.UseProgram(0) }
    }
 }
 
