@@ -1,9 +1,9 @@
 name: build
 on:
   push:
-    branches: [ master ]
+    # branches: [ master ]
   pull_request:
-    branches: [ master ]
+    # branches: [ master ]
 env:
   CARGO_TERM_COLOR: always
   LD_LIBRARY_PATH: /usr/local/lib
@@ -27,7 +27,7 @@ jobs:
           ${{ runner.os }}-itsusinn-another-
     - name: Install assimp
       run: sudo bash ${GITHUB_WORKSPACE}/install_assimp.bash
-    - name: Install stable
+    - name: Install stable Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
