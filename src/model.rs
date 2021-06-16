@@ -1,5 +1,4 @@
 use russimp::scene::{Scene, PostProcess};
-use another_gl as gl;
 
 #[test]
 fn test_load_model() {

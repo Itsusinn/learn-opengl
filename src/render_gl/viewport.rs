@@ -1,4 +1,3 @@
-use another_gl as gl;
 ///视窗变换
 pub struct Viewport {
     pub x: i32,

@@ -1,6 +1,7 @@
-use another_gl as gl;
-use nalgebra as na;
-use egui_sdl2_gl as egui_backend;
+extern crate another_gl as gl;
+extern crate  nalgebra as na;
+extern crate egui_sdl2_gl as egui_backend;
+
 use egui_backend::egui;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::video::GLProfile;
@@ -10,27 +11,27 @@ use egui_backend::egui::{vec2, Pos2, Rect};
 use anyhow::anyhow;
 
 #[macro_use] extern crate render_gl_derive;
-
 use crate::fonts::install_fonts;
 use crate::resources::Resources;
 
-pub mod triangle;
+pub mod triangles;
 pub mod render_gl;
 pub mod resources;
 pub mod fonts;
 mod model;
 
 
-const SCREEN_WIDTH: u32 = 1600;
+const SCREEN_WIDTH: u32 = 1920;
 const SCREEN_HEIGHT: u32 = 1200;
 
 fn main()-> Result<(),anyhow::Error> {
+    println!("hello!");
     let res =
         Resources::from_relative_exe_path(Path::new("assets"))?;
     let sdl_context = sdl2::init()
       .map_err(|msg| anyhow!("Sdl2 初始化失败 {}",msg))?;
     let video_subsystem = sdl_context.video()
-      .map_err(|msg| anyhow!("Video subsystem获取失败 {}", msg))?;
+      .map_err(|msg| anyhow!("视频子系统获取失败 {}", msg))?;
 
     let gl_attr = video_subsystem.gl_attr();
     gl_attr.set_context_profile(GLProfile::Core);
@@ -62,10 +63,10 @@ fn main()-> Result<(),anyhow::Error> {
       })
    );
     // UI缩放，将影响<设备像素密度>
-    let ui_zoom = 5f32;
-   // 获取<事件轮询器>，这是在SDL2中处理事件的传统方式
+    let ui_zoom = 4.2f32;
+   // 获取<事件泵>，这是在SDL2中处理事件的传统方式
     let mut event_pump = sdl_context.event_pump()
-        .map_err(|msg| anyhow!("事件轮询器获取失败: {}",msg))?;
+        .map_err(|msg| anyhow!("事件泵获取失败: {}",msg))?;
 
     //  fixme:查明换算公式
     let native_pixels_per_point =  (ui_zoom * 96f32) / video_subsystem.display_dpi(0).unwrap().0;
@@ -93,10 +94,8 @@ fn main()-> Result<(),anyhow::Error> {
     let mut color1_b: f32 = 1f32;
 
     let mut test_str: String = "用于输入的文本框。剪切、复制、粘贴命令可用".to_owned();
-
-    let triangle = triangle::Triangle::new(&res, &gl)?;
+    let square = triangles::Square::new(&res, &gl)?;
     let mut quit = false;
-
     'running: loop {
         egui_ctx.begin_frame(egui_input_state.input.take());
         // 每次渲染都会丢失视窗变换的数据，推测是egui的行为
@@ -111,11 +110,9 @@ fn main()-> Result<(),anyhow::Error> {
             // gl.Enable(gl::DEPTH_TEST);
             gl.Enable(gl::BLEND);
         }
-
         // 自定义的OpenGL渲染部分
         // TODO: 使用FrameBuffer
-        triangle.render(&gl);
-
+        square.render(&gl);
         // egui的UI定义部分
         egui::Window::new("Egui with SDL2 and GL").show(&egui_ctx, |ui| {
             ui.separator();

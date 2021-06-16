@@ -4,9 +4,6 @@ use std::io::{self, Read};
 use std::ffi::CString;
 use thiserror::Error;
 
-//
-//*************Error Message
-//
 #[derive(Debug,Error)]
 pub enum Error {
    #[error("I/O 错误")]
@@ -17,9 +14,6 @@ pub enum Error {
    FailedToGetExePath
 }
 
-//
-//*************Resources
-//
 pub struct Resources {
    root_path: PathBuf
 }
@@ -68,11 +62,9 @@ fn resource_name_to_path(
    location: &str
 ) -> PathBuf {
    let mut path:PathBuf = root_dir.into();
-
    for part in location.split('/') {
       // path.join(part)
       path = path.join(part)
    }
-
    path
 }

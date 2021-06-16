@@ -1,4 +1,3 @@
-use another_gl as gl;
 use gl::types::*;
 use std::ffi::{CStr, CString};
 use crate::resources::Resources;

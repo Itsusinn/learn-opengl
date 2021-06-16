@@ -1,4 +1,3 @@
-use another_gl as gl;
 use gl::types::*;
 
 pub trait BufferType {
@@ -13,7 +12,7 @@ pub struct Buffer<B> where B: BufferType {
 
 impl<B> Buffer<B> where B: BufferType {
     pub fn new(gl: &gl::Gl) -> Buffer<B> {
-        let mut id: gl::types::GLuint = 0;
+        let mut id = 0u32;
         unsafe {
             gl.GenBuffers(1, &mut id);
         }
@@ -40,7 +39,7 @@ impl<B> Buffer<B> where B: BufferType {
     pub fn static_draw_data<T>(&self, data: &[T]) {
         unsafe {
             self.gl.BufferData(
-                gl::ARRAY_BUFFER, // target
+                B::BUFFER_TYPE, // target
                 (data.len() * std::mem::size_of::<T>()) as gl::types::GLsizeiptr, // size of data in bytes
                 data.as_ptr() as *const gl::types::GLvoid, // pointer to data
                 gl::STATIC_DRAW, // usage
