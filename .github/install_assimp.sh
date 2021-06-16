@@ -1,7 +1,7 @@
 #!/bin/bash
 
 path_apt_sourcelist=/etc/apt/sources.list
-path_assimp_repo=/tmp/assimp
+path_assimp_repo=${GITHUB_WORKSPACE}/assimp
 path_assimp_build="${path_assimp_repo}/build"
 
 if ! grep -q "apt.llvm.org" ${path_apt_sourcelist}; then

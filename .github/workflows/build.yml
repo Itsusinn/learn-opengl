@@ -23,7 +23,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-itsusinn-another-
     - name: Install assimp
-      run: sudo bash ${GITHUB_WORKSPACE}/install_assimp.bash
+      run: sudo bash ${GITHUB_WORKSPACE}/.github/install_assimp.sh
+    - name: Install missing libs
+      run: |
+        sudo apt install libxcb-shape0-dev libxcb-xfixes0
     - name: Install stable Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
