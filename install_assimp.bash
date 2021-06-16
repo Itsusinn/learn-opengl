@@ -5,8 +5,7 @@ path_assimp_repo=/tmp/assimp
 path_assimp_build="${path_assimp_repo}/build"
 
 if ! grep -q "apt.llvm.org" ${path_apt_sourcelist}; then
-    wget https://apt.llvm.org/llvm.sh
-    bash llvm.sh 11
+	bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 fi
 
 apt install -y git cmake ninja-build
