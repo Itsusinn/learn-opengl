@@ -22,15 +22,16 @@ jobs:
         key: ${{ runner.os }}-itsusinn-another-${{ hashFiles('**/Cargo.toml') }}
         restore-keys: |
           ${{ runner.os }}-itsusinn-another
-    - name: Install assimp
-      run: |
-        sudo apt-get install libassimp-dev libxcb-shape0-dev libxcb-xfixes0-dev
     - name: Install stable Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: stable
         override: true
+    - name: Install assimp
+      run: |
+        sudo apt-get update
+        sudo apt-get install libassimp-dev libxcb-shape0-dev libxcb-xfixes0-dev mesa-common-dev
     - name: Build
       run: cargo build --verbose
     - name: Run tests
@@ -51,16 +52,20 @@ jobs:
           /tmp/assimp
         key: ${{ runner.os }}-itsusinn-another-${{ hashFiles('**/Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-itsusinn-another-
-    - name: Install assimp
-      run: brew install assimp
+          ${{ runner.os }}-itsusinn-another
+
     - name: Install stable Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: stable
         override: true
+
+    - name: Install assimp
+      run: brew install assimp
+
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+

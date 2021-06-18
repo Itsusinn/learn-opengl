@@ -19,29 +19,37 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-itsusinn-another-${{ hashFiles('**/Cargo.toml') }}
+        key: ${{ runner.os }}-itsusinn-another-cross-${{ hashFiles('**/Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-itsusinn-another
-    - name: Install assimp
-      run: |
-        sudo apt-get install libassimp-dev libxcb-shape0-dev libxcb-xfixes0-dev
+          ${{ runner.os }}-itsusinn-another-cross
+
     - name: Install stable Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: nightly
         override: true
+
+    - name: Install assimp
+      run: |
+        sudo apt-get update
+        sudo apt-get install libassimp-dev libxcb-shape0-dev libxcb-xfixes0-dev mesa-common-dev libgl1-mesa-dev libsdl2-dev libsdl2-mixer-dev libsdl2-gfx-dev libsdl2-image-dev libsdl2-ttf-dev xorg-dev
     - name: Build
       uses: actions-rs/cargo@v1
       with:
-        use-cross: true
+        # use-cross: true
+        # see https://github.com/rtbo/rust-xcb/issues/31
         command: build
-        args:  --release --target x86_64-unknown-linux-musl
+        # args:  --release --target x86_64-unknown-linux-musl
+        args:  --release
+
     - name: Upload bin
       uses: actions/upload-artifact@v2
       with:
         name: another-amd64-linux
-        path: target/x86_64-unknown-linux-musl/release/another
+        # path: target/x86_64-unknown-linux-musl/release/another
+        path: target/release/another
+
   macos-build:
     runs-on: macos-latest
     steps:
@@ -55,28 +63,33 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-itsusinn-another-${{ hashFiles('**/Cargo.toml') }}
+        key: ${{ runner.os }}-itsusinn-another-cross-${{ hashFiles('**/Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-itsusinn-another
-    - name: Install assimp
-      run: brew install assimp
+          ${{ runner.os }}-itsusinn-another-cross
+
     - name: Install stable Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: nightly
         override: true
+
+    - name: Install assimp
+      run: brew install assimp
+
     - name: Build
       uses: actions-rs/cargo@v1
       with:
         use-cross: true
         command: build
         args:  --release --target x86_64-apple-darwin
+
     - name: Upload bin
       uses: actions/upload-artifact@v2
       with:
         name: another-amd64-macos
         path: target/x86_64-apple-darwin/release/another
+
   release:
     name: Release
     needs: [linux-build, macos-build]
@@ -87,28 +100,23 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: another-amd64-linux
+          path: ./packages/amd64-linux
       - name: Download macos-bin
         uses: actions/download-artifact@v2
         with:
           name: another-amd64-macos
+          path: ./packages/amd64-macos
       - name: Install zip
-          uses: montudor/action-zip@v1
+        uses: montudor/action-zip@v1
       - name: Move,rename packages
+        id: package
         run: |
-          mkdir packages
-          cd packages
-          mkdir amd64-linux amd64-macos
-          cd ${{ GITHUB_WORKSPACE }}
-          mv another-amd64-linux another
-          mv another ./packages/amd64-linux/
-          mv another-amd64-macos another
-          mv another ./packages/amd64-macos/
           cp -r assets ./packages/amd64-linux/
           cp -r assets ./packages/amd64-macos/
           cd packages
           zip -qq -r another-amd64-linux.zip amd64-linux
           zip -qq -r another-amd64-macos.zip amd64-macos
-          cd ${{ GITHUB_WORKSPACE }}
+          cd $GITHUB_WORKSPACE
           v1="version"
           v1=`grep -m 1 $v1 Cargo.toml`
           v1=${v1%\"*}
@@ -120,6 +128,6 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: "${{ steps.package.outputs.VERSION }}"
           prerelease: true
-          title: "Bukkit Message Source ${{ steps.package.outputs.VERSION }}"
+          title: "Another ${{ steps.package.outputs.VERSION }}"
           files: |
             packages/*.zip
