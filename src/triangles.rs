@@ -21,7 +21,7 @@ pub struct Square {
     _vbo: buffer::ArrayBuffer,
     _ebo: buffer::ElementArrayBuffer,
     vao: buffer::VertexArray,
-    texture: texture::Texture
+    texture: Vec<texture::Texture>
 }
 
 impl Square{
@@ -77,24 +77,31 @@ impl Square{
         Vertex::vertex_attrib_pointers(gl);
         // 注意这里有一个自动绑定机制
         vao.unbind();
-        let texture = texture::Texture::from_res(
+        let texture0 = texture::Texture::from_res(
             &gl, &res, "textures/wall.jpg"
+        )?;
+        let texture1 = texture::Texture::from_res(
+            gl, res, "textures/container.jpg"
         )?;
         Ok(Square {
             program,
             _vbo: vbo,
             _ebo: ebo,
             vao,
-            texture
+            texture: vec![texture0,texture1]
         })
     }
 
-    pub fn render(&self, gl: &gl::Gl) {
+    pub fn render(&self, gl: &gl::Gl)-> Option<()> {
         check_error(gl);
         self.program.set_used();
         self.vao.bind();
         unsafe {
-            gl.BindTexture(gl::TEXTURE_2D, self.texture.id);
+            // 绑定两个纹理到对应的纹理单元
+            gl.ActiveTexture(gl::TEXTURE0);
+            self. texture.get(0)?.bind();
+            gl.ActiveTexture(gl::TEXTURE1);
+            self. texture.get(1)?.bind();
             gl.DrawElements(
                 gl::TRIANGLES,
                 6,
@@ -105,5 +112,6 @@ impl Square{
         self.vao.unbind();
         self.program.detach();
         check_error(gl);
+        Some(())
     }
 }

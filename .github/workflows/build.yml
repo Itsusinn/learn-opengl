@@ -21,10 +21,9 @@ jobs:
           /tmp/assimp
         key: ${{ runner.os }}-itsusinn-another-${{ hashFiles('**/Cargo.toml') }}
         restore-keys: |
-          ${{ runner.os }}-itsusinn-another-
+          ${{ runner.os }}-itsusinn-another
     - name: Install assimp
       run: |
-        sudo apt-get update
         sudo apt-get install libassimp-dev libxcb-shape0-dev libxcb-xfixes0-dev
     - name: Install stable Rust toolchain
       uses: actions-rs/toolchain@v1

@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 # GL-Framework&UI
-sdl2 = { version = "0.34.3", features = ["bundled", "static-link"] }
-egui = "0.12.0"
+sdl2 = { version = "0.34", features = ["bundled", "static-link"] }
+egui = "0.12"
 egui_sdl2_gl =  { path="lib/egui_sdl2_gl" }
 # GL
 another_gl = { path = "lib/another_gl" }
@@ -17,9 +17,9 @@ thiserror = "1.0"
 anyhow = "1.0"
 # math
 vec-2-10-10-10 = "0.1.2"
-nalgebra = "0.27.1"
+nalgebra = "0.27"
 # assests
-stb_image = "0.2.3"
+stb_image = { path = "lib/rust-stb-image"}
 russimp = "0.2.0"
 
 [build-dependencies]

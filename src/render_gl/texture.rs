@@ -9,11 +9,11 @@ use crate::resources::Resources;
 pub enum Error {
    #[error("I/O 错误")]
    IO(#[from] io::Error),
-   #[error("纹理加载错误")]
+   #[error("纹理加载错误 ,原因:{0}")]
    LoadError(String)
 }
 pub struct  Texture {
-    pub id : u32,
+    id : u32,
     gl : gl::Gl
 }
 impl Texture {
@@ -67,11 +67,16 @@ impl Texture {
         full_path.push(name);
         Self::new(gl, full_path)
     }
+    pub fn bind(&self){
+        unsafe {
+            self.gl.BindTexture(gl::TEXTURE_2D, self.id);
+        }
+    }
 }
 impl Drop for Texture {
     fn drop(&mut self) {
        unsafe {
-           self.gl.DeleteTextures(1,&mut self.id) 
+           self.gl.DeleteTextures(1,&mut self.id)
         }
     }
  }
