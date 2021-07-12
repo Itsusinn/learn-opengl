@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'another'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=another",
+                    "--package=another",
+                   // "--features=gl_debug"
+                ],
+                "filter": {
+                    "name": "another",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'another'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=another",
+                    "--package=another",
+                   //  "--features=gl_debug"
+                ],
+                "filter": {
+                    "name": "another",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
