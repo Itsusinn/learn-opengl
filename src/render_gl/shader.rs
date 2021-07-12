@@ -3,23 +3,20 @@ use std::ffi::{CStr, CString};
 use crate::resources::Resources;
 use crate::resources;
 use thiserror::Error;
-
+use na::{Matrix4, Vector2, Vector3, Vector4};
 
 #[derive(Debug,Error)]
 pub enum Error {
-   #[error("Failed to load resource {}", name)]
+   #[error("资源加载失败 {}", name)]
    ResourceLoad { name: String,#[source] inner: resources::Error },
    #[error("Can not determine shader type for resource {}", name)]
    CanNotDetermineShaderTypeForResource { name: String },
-   #[error( "Failed to compile shader {}", message)]
+   #[error( "着色器编译失败: {}", message)]
    CompileError { message: String },
-   #[error("Failed to link program : {}", message)]
+   #[error("着色程序链接失败 : {}", message)]
    LinkError { message: String },
 }
 
-//
-//  **********Program
-//
 pub struct Program {
    gl: gl::Gl,
    id: GLuint,
@@ -34,14 +31,56 @@ impl Program {
       let shaders = POSSIBLE_EXT.iter()
          .map(|file_extension| {
             Shader::from_res(
-               gl,
-               res,
+               gl,res,
                &format!("{}{}", name, file_extension)
             )
          })
          .collect::<Result<Vec<Shader>, Error>>()?;
       Ok(Program::from_shaders(gl,&shaders[..])?)
    }
+
+   pub fn upload_texture(&self, name: &str, slot: i32) {
+      self.set_used();
+      let name = CString::new(name).unwrap();
+      unsafe {
+         let location = self.gl.GetUniformLocation(self.id, name.as_ptr());
+         self.gl.Uniform1i(location, slot);
+      }
+  }
+   pub fn upload_mat4(&self,name: &str, mat4: &Matrix4<f32>) {
+      self.set_used();
+      let name = CString::new(name).unwrap();
+      unsafe {
+         let location = self.gl.GetUniformLocation(self.id, name.as_ptr());
+         self.gl.UniformMatrix4fv(location,1, gl::FALSE, mat4.as_ptr());
+      }
+   }
+   pub fn upload_vec2(&self, name: &str, vec2: &Vector2<f32>) {
+      self.set_used();
+      let name = CString::new(name).unwrap();
+      unsafe {
+         let location = self.gl.GetUniformLocation(self.id, name.as_ptr());
+         self.gl.Uniform2fv(location, 1, vec2.as_ptr());
+      }
+  }
+
+   pub fn upload_vec3(&self, name: &str, vec3: &Vector3<f32>) {
+      self.set_used();
+      let name = CString::new(name).unwrap();
+      unsafe {
+         let location = self.gl.GetUniformLocation(self.id, name.as_ptr());
+         self.gl.Uniform3fv(location, 1, vec3.as_ptr());
+      }
+  }
+
+   pub fn upload_vec4(&self, name: &str, vec4: &Vector4<f32>) {
+      self.set_used();
+      let name = CString::new(name).unwrap();
+      unsafe  {
+         let location = self.gl.GetUniformLocation(self.id, name.as_ptr());
+         self.gl.Uniform4fv(location, 1, vec4.as_ptr());
+      }
+  }
 
    pub fn from_shaders(gl: &gl::Gl, shaders: &[Shader]) -> Result<Program, Error> {
       let program_id = unsafe { gl.CreateProgram() };
@@ -100,9 +139,6 @@ impl Drop for Program {
    }
 }
 
-//
-//  **********Shader
-//
 pub struct Shader {
    gl: gl::Gl,
    id: gl::types::GLuint,

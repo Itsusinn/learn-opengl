@@ -1,6 +1,8 @@
 extern crate another_gl as gl;
 extern crate  nalgebra as na;
 extern crate egui_sdl2_gl as egui_backend;
+#[macro_use]
+extern crate lazy_static;
 
 use egui_backend::egui;
 use sdl2::event::{Event, WindowEvent};
@@ -14,11 +16,15 @@ use anyhow::anyhow;
 use crate::fonts::install_fonts;
 use crate::resources::Resources;
 
+pub mod model;
+pub mod input;
 pub mod triangles;
 pub mod render_gl;
+pub mod geom;
 pub mod resources;
 pub mod fonts;
-mod model;
+mod time;
+
 
 
 const SCREEN_WIDTH: u32 = 1920;
@@ -40,7 +46,7 @@ fn main()-> Result<(),anyhow::Error> {
 
     let window = video_subsystem
         .window(
-            "演示: Egui  (SDL2 + GL后端)",
+            "Egui演示  (SDL2 + GL后端)",
             SCREEN_WIDTH,
             SCREEN_HEIGHT,
         )
@@ -94,8 +100,10 @@ fn main()-> Result<(),anyhow::Error> {
     let mut color1_b: f32 = 1f32;
 
     let mut test_str: String = "用于输入的文本框。剪切、复制、粘贴命令可用".to_owned();
-    let square = triangles::Square::new(&res, &gl)?;
+    let mut square = triangles::Square::new(&res, &gl)?;
+    square.before_render();
     let mut quit = false;
+    time::update();
     'running: loop {
         egui_ctx.begin_frame(egui_input_state.input.take());
         // 每次渲染都会丢失视窗变换的数据，推测是egui的行为
@@ -112,10 +120,14 @@ fn main()-> Result<(),anyhow::Error> {
         }
         // 自定义的OpenGL渲染部分
         // TODO: 使用FrameBuffer
+        time::update();
+        square.camera.handle_sdl_input();
         square.render(&gl);
         // egui的UI定义部分
         egui::Window::new("Egui with SDL2 and GL").show(&egui_ctx, |ui| {
             ui.separator();
+            ui.label(format!("FPS: {}",1.0 / time::get_delta()));
+            ui.label("");
             ui.label("这是egui的演示用文本");
             ui.label(" ");
             ui.text_edit_multiline(&mut test_str);
@@ -145,8 +157,8 @@ fn main()-> Result<(),anyhow::Error> {
         // 用OpenGL渲染结果更新窗口
         // macOS 上，frame buffer必须重新绑定到0上，否则。。。
         window.gl_swap_window();
-
         for event in event_pump.poll_iter() {
+            input::handle_sdl_input(&event);
             match event {
                 Event::Quit { .. } => break 'running,
                 Event::Window {
@@ -160,12 +172,16 @@ fn main()-> Result<(),anyhow::Error> {
                     ))
                  },
                 _ => {
-                    // 将捕捉的输入交给egui
+                    // 将捕捉的输入传递给egui
                     egui_backend::input_to_egui(event, &mut egui_input_state);
                 }
             }
+
         }
         if quit { break; }
+        // let dur = std::time::Duration::from_millis(16);
+        // std::thread::sleep(dur)
+        //todo: soft-vsync
     }
     Ok(())
 }

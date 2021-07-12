@@ -18,6 +18,7 @@ pub struct  Texture {
 }
 impl Texture {
     pub fn new(gl: &gl::Gl,path:PathBuf) -> Result<Texture,Error>{
+        image::stbi_set_flip_vertically_on_load(true);
         let result = image::load(path);
         if let LoadResult::Error(msg) = result {
             return Err(Error::LoadError(msg));
@@ -26,30 +27,20 @@ impl Texture {
         unsafe  {
             gl.GenTextures(1, &mut id);
             gl.BindTexture(gl::TEXTURE_2D, id);
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
         }
         match result {
             LoadResult::ImageF32(data) => {
                 unsafe {
-                    gl.TexImage2D(
-                        gl::TEXTURE_2D,
-                        0,
-                        gl::RGB as i32,
-                        data.width as i32,data.height as i32,
-                        0, gl::RGB, gl::UNSIGNED_BYTE,
-                        data.data.as_ptr() as *const gl::types::GLvoid
-                    );
+                    upload_texture_data(gl, data.width, data.height, data.depth, data.data.as_ptr() as *const gl::types::GLvoid);
                 }
             }
             LoadResult::ImageU8(data) => {
                 unsafe {
-                    gl.TexImage2D(
-                        gl::TEXTURE_2D,
-                        0,
-                        gl::RGB as i32,
-                        data.width as i32,data.height as i32,
-                        0, gl::RGB, gl::UNSIGNED_BYTE,
-                        data.data.as_ptr() as *const gl::types::GLvoid
-                    );
+                    upload_texture_data(gl, data.width, data.height, data.depth, data.data.as_ptr() as *const gl::types::GLvoid);
                 }
             },
             _=> { panic!("不可达的代码") }
@@ -78,5 +69,37 @@ impl Drop for Texture {
        unsafe {
            self.gl.DeleteTextures(1,&mut self.id)
         }
+    }
+ }
+
+ unsafe  fn upload_texture_data(
+    gl:&gl::Gl,
+    width: usize,
+    height: usize,
+    channels: usize,
+    pixels: *const gl::types::GLvoid
+){
+    match channels {
+        3 => {
+            gl.TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGB as i32,
+                width as i32,height as i32,
+                0, gl::RGB, gl::UNSIGNED_BYTE,
+                pixels
+            );
+        },
+        4 => {
+            gl.TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA as i32,
+                width as i32,height as i32,
+                0, gl::RGBA, gl::UNSIGNED_BYTE,
+                pixels
+            );
+        },
+        _ => { panic!("不支持的图片通道数") }
     }
  }

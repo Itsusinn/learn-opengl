@@ -5,6 +5,9 @@ authors = ["Itsusinn奕䜣 <itsusinn@foxmail.com>"]
 edition = "2018"
 
 [dependencies]
+lazy_static = "1.4.0"
+dashmap = "4.0.2"
+atomic_float = "0.1.0"
 # GL-Framework&UI
 sdl2 = { version = "0.34", features = ["bundled", "static-link"] }
 egui = "0.12"
