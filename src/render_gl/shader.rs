@@ -39,7 +39,7 @@ impl Program {
       Ok(Program::from_shaders(gl,&shaders[..])?)
    }
 
-   pub fn upload_texture(&self, name: &str, slot: i32) {
+   pub fn upload_texture_slot(&self, name: &str, slot: i32) {
       self.set_used();
       let name = CString::new(name).unwrap();
       unsafe {

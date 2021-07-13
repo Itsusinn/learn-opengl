@@ -114,6 +114,9 @@ impl Square{
         let texture1 = texture::Texture::from_res(
            &gl, res, "textures/awesomeface.png"
         )?;
+        //告诉OpenGL每个着色器采样器属于哪个纹理单元
+        program.upload_texture_slot("texture0", 0);
+        program.upload_texture_slot("texture1", 1);
         Ok(Square {
             program,
             _vbo: vbo,
@@ -123,12 +126,6 @@ impl Square{
             camera: Camera::new(na::Point3::new(0.0,0.0,0.0))
         })
     }
-    pub fn before_render(&self) {
-        //告诉OpenGL每个着色器采样器属于哪个纹理单元
-        self.program.upload_texture("texture0", 0);
-        self.program.upload_texture("texture1", 1);
-    }
-
     pub fn render(&self, gl: &gl::Gl)-> Option<()> {
         check_error(gl);
         self.program.set_used();
@@ -149,7 +146,6 @@ impl Square{
         }
         self.vao.unbind();
         self.program.detach();
-        check_error(gl);
         Some(())
     }
 }

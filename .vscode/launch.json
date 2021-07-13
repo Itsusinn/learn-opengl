@@ -5,12 +5,13 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug executable 'another'",
+            "environment": [{"name": "RUST_BACKTRACE", "value": "1"}],
             "cargo": {
                 "args": [
                     "build",
                     "--bin=another",
                     "--package=another",
-                   // "--features=gl_debug"
+                   "--features=gl_debug"
                 ],
                 "filter": {
                     "name": "another",
@@ -24,13 +25,14 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug unit tests in executable 'another'",
+            "environment": [{"name": "RUST_BACKTRACE", "value": "1"}],
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--bin=another",
                     "--package=another",
-                   //  "--features=gl_debug"
+                   "--features=gl_debug"
                 ],
                 "filter": {
                     "name": "another",

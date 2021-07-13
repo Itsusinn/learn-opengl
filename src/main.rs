@@ -4,16 +4,21 @@ extern crate egui_sdl2_gl as egui_backend;
 #[macro_use]
 extern crate lazy_static;
 
+use na::Vector3;
 use egui_backend::egui;
+use sdl2::Sdl;
+use sdl2::{keyboard::Keycode, mouse::MouseUtil};
 use sdl2::event::{Event, WindowEvent};
 use sdl2::video::GLProfile;
 use std::path::Path;
 use std::rc::Rc;
 use egui_backend::egui::{vec2, Pos2, Rect};
 use anyhow::anyhow;
+use render_gl::frame_buffer::FrameBuffer;
 
 #[macro_use] extern crate render_gl_derive;
 use crate::fonts::install_fonts;
+use crate::frame::Frame;
 use crate::resources::Resources;
 
 pub mod model;
@@ -24,8 +29,7 @@ pub mod geom;
 pub mod resources;
 pub mod fonts;
 mod time;
-
-
+pub mod frame;
 
 const SCREEN_WIDTH: u32 = 1920;
 const SCREEN_HEIGHT: u32 = 1200;
@@ -38,6 +42,8 @@ fn main()-> Result<(),anyhow::Error> {
       .map_err(|msg| anyhow!("Sdl2 初始化失败 {}",msg))?;
     let video_subsystem = sdl_context.video()
       .map_err(|msg| anyhow!("视频子系统获取失败 {}", msg))?;
+
+    let mouse = sdl_context.mouse();
 
     let gl_attr = video_subsystem.gl_attr();
     gl_attr.set_context_profile(GLProfile::Core);
@@ -92,37 +98,42 @@ fn main()-> Result<(),anyhow::Error> {
         render_gl::Viewport::for_window(SCREEN_WIDTH as i32,SCREEN_HEIGHT as i32);
     viewport.refresh(&gl);
 
-    let mut color_buffer =
-        render_gl::ColorBuffer::from_color(na::Vector3::new(0.3, 0.6, 0.3));
-
-    let mut color1_r: f32 = 1f32;
-    let mut color1_g: f32 = 1f32;
-    let mut color1_b: f32 = 1f32;
+    let color_buffer =
+        render_gl::ColorBuffer::from_color(Vector3::new(1.0, 1.0, 1.0));
+    color_buffer.clear(&gl);
 
     let mut test_str: String = "用于输入的文本框。剪切、复制、粘贴命令可用".to_owned();
     let mut square = triangles::Square::new(&res, &gl)?;
-    square.before_render();
+
     let mut quit = false;
+    let mut input_enable = false;
+    let frame_buffer =FrameBuffer::new(&gl,SCREEN_WIDTH as i32,SCREEN_HEIGHT as i32);
+    let frame = Frame::new(&res, &gl, &frame_buffer)?;
     time::update();
+    unsafe {
+        gl.Enable(gl::BLEND);
+    }
     'running: loop {
         egui_ctx.begin_frame(egui_input_state.input.take());
-        // 每次渲染都会丢失视窗变换的数据，推测是egui的行为
-        viewport.refresh(&gl);
         // 每次渲染都会丢失设备像素的数据，推测是egui的行为
         egui_input_state.input.pixels_per_point = Some(native_pixels_per_point);
 
-        color_buffer.clear(&gl);
-        unsafe {
-            gl.Clear(gl::COLOR_BUFFER_BIT);
-            // fixme 深度测试无法使用
-            // gl.Enable(gl::DEPTH_TEST);
-            gl.Enable(gl::BLEND);
-        }
+        // 每次渲染都会丢失视窗变换的数据，推测是egui的行为
+        viewport.refresh(&gl);
         // 自定义的OpenGL渲染部分
-        // TODO: 使用FrameBuffer
         time::update();
         square.camera.handle_sdl_input();
+        frame_buffer.bind();
+        unsafe {
+            gl.Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            gl.Enable(gl::DEPTH_TEST);
+        }
         square.render(&gl);
+        frame_buffer.detach();
+        unsafe {
+            gl.Disable(gl::DEPTH_TEST);
+        }
+        frame.render(&gl);
         // egui的UI定义部分
         egui::Window::new("Egui with SDL2 and GL").show(&egui_ctx, |ui| {
             ui.separator();
@@ -132,30 +143,22 @@ fn main()-> Result<(),anyhow::Error> {
             ui.label(" ");
             ui.text_edit_multiline(&mut test_str);
             ui.label(" ");
-            ui.add(egui::Slider::new(&mut color1_r, 0.0..=1.0).text("Color1-R"));
-            ui.add(egui::Slider::new(&mut color1_g, 0.0..=1.0).text("Color1-G"));
-            ui.add(egui::Slider::new(&mut color1_b, 0.0..=1.0).text("Color1-B"));
-            ui.label(" ");
             if ui.button("Quit").clicked() {
                 quit = true;
             }
         });
-        let color1 = na::Vector3::new(color1_r, color1_g, color1_b);
-        color_buffer.update_color(color1);
         // egui前端完成渲染，生成后端无关的<绘制指令>
         let (_, paint_cmds) = egui_ctx.end_frame();
-        // 将<绘制指令>转化为<网格>(Mesh),即几何体集合
+        // 将egui<绘制指令>转化为<网格>(Mesh),即几何体集合
         let paint_jobs = egui_ctx.tessellate(paint_cmds);
-        // 由后端完成实际的绘制
+        // 由egui后端完成实际的绘制
         painter.paint_jobs(
             None,
             paint_jobs,
             &egui_ctx.texture(),
             native_pixels_per_point,
         );
-
         // 用OpenGL渲染结果更新窗口
-        // macOS 上，frame buffer必须重新绑定到0上，否则。。。
         window.gl_swap_window();
         for event in event_pump.poll_iter() {
             input::handle_sdl_input(&event);
@@ -176,9 +179,21 @@ fn main()-> Result<(),anyhow::Error> {
                     egui_backend::input_to_egui(event, &mut egui_input_state);
                 }
             }
-
+        }
+        if input::get_key(Keycode::Escape, false){
+            quit = true;
         }
         if quit { break; }
+        if input::get_key_with_cooldown(Keycode::LCtrl, false,0.2) {
+            input_enable = !input_enable;
+            mouse.set_relative_mouse_mode(input_enable);
+            if input_enable {
+                square.camera.enable();
+            } else {
+                square.camera.disable();
+            }
+        }
+
         // let dur = std::time::Duration::from_millis(16);
         // std::thread::sleep(dur)
         //todo: soft-vsync
