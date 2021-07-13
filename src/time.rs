@@ -17,3 +17,6 @@ pub fn update(){
 pub fn get_delta() -> f32{
     *DELTA_TIME.read().unwrap()
 }
+pub fn get_now() -> f32 {
+    START.elapsed().as_secs_f32()
+}

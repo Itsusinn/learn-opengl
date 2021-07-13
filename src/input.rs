@@ -6,9 +6,12 @@ use sdl2::keyboard::Keycode;
 use std::sync::atomic::Ordering::SeqCst;
 use std::ops::Deref;
 
+use crate::time;
+
 lazy_static!{
     static ref  KEYMAP:KeyMap = KeyMap::new();
     static ref MOUSE:Mouse = Mouse::new();
+    static ref COOLDOWN_MAP:DashMap<Keycode,f32> = DashMap::new();
 }
 
 struct Mouse {
@@ -56,6 +59,28 @@ pub fn get_key(
     match pair {
         None => return default,
         Some( pair) =>  return *pair
+    }
+}
+pub fn get_key_with_cooldown( 
+    keycode:Keycode,
+    default:bool,
+    cooltime:f32
+) -> bool{
+    let tv = get_key(keycode, default);
+    if !tv {return false;}
+    if !COOLDOWN_MAP.contains_key(&keycode) {
+        //不含该键，说明第一次按下该键
+        COOLDOWN_MAP.insert(keycode, 0.0);
+        return true;
+    } else {
+        let mut last = COOLDOWN_MAP.get_mut(&keycode).unwrap();
+        let now = time::get_now();
+        if (now - *last) > cooltime {
+            *last = now;
+            return true;
+        }else {
+            return false;
+        }
     }
 }
 pub fn handle_sdl_input(event:&Event){
