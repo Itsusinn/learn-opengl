@@ -1,5 +1,5 @@
 use na::{Matrix4, Point3, Unit, Vector3};
-use sdl2::keyboard::Keycode;
+use sdl2::{keyboard::Keycode, mouse::MouseUtil};
 use crate::time;
 
 use super::input;
@@ -26,6 +26,7 @@ pub struct  Camera {
     zfar: f32,
      // 视域(角度)
     fov:f32,
+    enable:bool
 }
 impl Camera {
     pub fn new(eye: Point3<f32> ) -> Self{
@@ -37,11 +38,13 @@ impl Camera {
            eye,toward,up,
            pitch:0.0,yaw:-90.0,
            znear: 1.0,zfar: 10000.0,
-           fov: 3.14/4.0
+           fov: 3.14/4.0,
+           enable:false
        }
     }
     pub fn move_forward_and_backward(&mut self,distance:f32){
-        let delta = self.toward.normalize() * distance;
+        let change = Vector3::new(self.toward.x,0.0,self.toward.z).normalize();
+        let delta = change * distance;
         self.eye += delta
     }
     pub fn move_left_and_right(&mut self,distance:f32){
@@ -76,7 +79,15 @@ impl Camera {
         self.up = self.toward.cross(&right).normalize();
     }
     pub fn handle_sdl_input(&mut self) {
+        let (dx,dy) = input::fetch_motion();
+        if !self.enable { return; }
         let rate = time::get_delta()  * 10.0;
+        if dx != 0 {
+            self.turn_right_and_left((dx as f32)/10.0);
+        }
+        if dy != 0 {
+            self.turn_up_and_down((dy as f32)/10.0);
+        }
         if  input::get_key(Keycode::W,false) {
             self.move_forward_and_backward( rate);
         }
@@ -95,17 +106,16 @@ impl Camera {
         if input::get_key(Keycode::LShift,false) {
             self.move_upward_and_downward(-rate);
         }
-        let (dx,dy) = input::fetch_motion();
-        if dx != 0 {
-            self.turn_right_and_left((dx as f32)/10.0);
-        }
-        if dy != 0 {
-            self.turn_up_and_down((dy as f32)/10.0);
-        }
     }
     pub fn get_pv_mat(&self) -> Matrix4<f32>{
         let proj_mat =  Matrix4::new_perspective(16.0/9.0 , self.fov, self.znear, self.zfar);
         let view_mat = Matrix4::look_at_rh(&self.eye,&(&self.eye + &self.toward),&self.up);
         proj_mat * view_mat
+    }
+    pub fn disable(&mut self){
+        self.enable = false;
+    }
+    pub fn enable(&mut self){
+        self.enable = true;
     }
 }
