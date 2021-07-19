@@ -1,5 +1,3 @@
-use na::Point3;
-
 use crate::geom::camera::Camera;
 use crate::render_gl;
 use crate::render_gl::debug::check_error;

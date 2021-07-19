@@ -6,8 +6,7 @@ extern crate lazy_static;
 
 use na::Vector3;
 use egui_backend::egui;
-use sdl2::Sdl;
-use sdl2::{keyboard::Keycode, mouse::MouseUtil};
+use sdl2::keyboard::Keycode;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::video::GLProfile;
 use std::path::Path;
@@ -18,10 +17,9 @@ use render_gl::frame_buffer::FrameBuffer;
 
 #[macro_use] extern crate render_gl_derive;
 use crate::fonts::install_fonts;
-use crate::frame::Frame;
+use crate::app_frame::Frame;
 use crate::resources::Resources;
 
-pub mod model;
 pub mod input;
 pub mod triangles;
 pub mod render_gl;
@@ -29,7 +27,7 @@ pub mod geom;
 pub mod resources;
 pub mod fonts;
 mod time;
-pub mod frame;
+pub mod app_frame;
 
 const SCREEN_WIDTH: u32 = 1920;
 const SCREEN_HEIGHT: u32 = 1200;

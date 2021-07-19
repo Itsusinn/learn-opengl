@@ -1,6 +1,6 @@
 use std::{io, path::PathBuf};
 
-use stb_image::image::{self,Image, LoadResult};
+use stb_image::image::{self, LoadResult};
 use thiserror::Error;
 
 use crate::resources::Resources;

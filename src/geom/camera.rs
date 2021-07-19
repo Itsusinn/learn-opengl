@@ -1,10 +1,9 @@
 use na::{Matrix4, Point3, Unit, Vector3};
-use sdl2::{keyboard::Keycode, mouse::MouseUtil};
+use sdl2::keyboard::Keycode;
 use crate::time;
 
 use super::input;
 
-static PI:f32 = std::f32::consts::PI;
 lazy_static!{
     static ref Y_AXIS:Unit<Vector3<f32>> = Vector3::y_axis();
 }

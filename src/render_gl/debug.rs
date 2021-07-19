@@ -1,13 +1,9 @@
 use core::panic;
 
 pub  fn check_error(gl:&gl::Gl){
-    let mut code: gl::types::GLenum = 0u32;
-    unsafe {
-        code = gl.GetError();
-    }
-    if code == 0 {
-        return;
-    }
+    let code= unsafe{ gl.GetError() };
+    if code == 0 {return;}
+
     match code{
         gl::INVALID_ENUM => {
             panic!("枚举参数不合法")

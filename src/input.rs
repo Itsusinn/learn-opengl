@@ -61,16 +61,18 @@ pub fn get_key(
         Some( pair) =>  return *pair
     }
 }
-pub fn get_key_with_cooldown( 
+pub fn get_key_with_cooldown(
     keycode:Keycode,
     default:bool,
     cooltime:f32
 ) -> bool{
     let tv = get_key(keycode, default);
-    if !tv {return false;}
+    // 若按键本就未按下，则返回false
+    if !tv { return false;}
     if !COOLDOWN_MAP.contains_key(&keycode) {
         //不含该键，说明第一次按下该键
-        COOLDOWN_MAP.insert(keycode, 0.0);
+        let now = time::get_now();
+        COOLDOWN_MAP.insert(keycode, now);
         return true;
     } else {
         let mut last = COOLDOWN_MAP.get_mut(&keycode).unwrap();

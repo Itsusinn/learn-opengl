@@ -1,7 +1,7 @@
 use crate::render_gl::frame_buffer::FrameBuffer;
 use crate::render_gl;
 use crate::render_gl::debug::check_error;
-use crate::render_gl::{buffer, data,texture};
+use crate::render_gl::{buffer, data};
 use crate::resources::Resources;
 
 #[derive(VertexAttribPointers)]
