@@ -1,6 +1,3 @@
-[submodule "lib/egui_sdl2_gl"]
-	path = lib/egui_sdl2_gl
-	url = git@github.com:Itsusinn/egui_sdl2_gl.git
 [submodule "lib/rust-stb-image"]
 	path = lib/rust-stb-image
 	url = git@github.com:Itsusinn/rust-stb-image.git
