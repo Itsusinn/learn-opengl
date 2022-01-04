@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 lazy_static = "1.4.0"
-dashmap = "4.0.2"
+dashmap = "5.0.0"
 atomic_float = "0.1.0"
 serde = "1.0"
 # GL-Framework&UI
@@ -21,11 +21,11 @@ thiserror = "1.0"
 anyhow = "1.0"
 # math
 vec-2-10-10-10 = "0.1.2"
-nalgebra = "0.28.0"
+nalgebra = "0.29.0"
 # assests
 stb_image = { path = "lib/rust-stb-image"}
-russimp = "0.2.0"
-
+russimp = "0.2.3"
+arcstr = "1.1.1"
 [build-dependencies]
 walkdir = "2.3.1"
 
