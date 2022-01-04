@@ -24,8 +24,7 @@ pub struct Camera {
   // 远平面距离
   zfar: f32,
   // 视域(角度)
-  fov: f32,
-  enable: bool,
+  fov_rate: f32
 }
 impl Camera {
   pub fn new(eye: Point3<f32>) -> Self {
@@ -41,10 +40,13 @@ impl Camera {
       yaw: -90.0,
       znear: 1.0,
       zfar: 10000.0,
-      fov: 3.14 / 4.0,
-      enable: false,
+      fov_rate: 1.0
     }
   }
+  pub fn update_fov_rate(&mut self, fov_rate:f32){
+    self.fov_rate = fov_rate;
+  }
+
   pub fn move_forward_and_backward(&mut self, distance: f32) {
     let change = Vector3::new(self.toward.x, 0.0, self.toward.z).normalize();
     let delta = change * distance;
@@ -83,9 +85,6 @@ impl Camera {
   }
   pub fn handle_sdl_input(&mut self) {
     let (dx, dy) = input::fetch_motion();
-    if !self.enable {
-      return;
-    }
     let rate = time::get_delta() * 10.0;
     if dx != 0 {
       self.turn_right_and_left((dx as f32) / 10.0);
@@ -93,34 +92,28 @@ impl Camera {
     if dy != 0 {
       self.turn_up_and_down((dy as f32) / 10.0);
     }
-    if input::get_key(Keycode::W, false) {
+    if input::get_key(Keycode::W) {
       self.move_forward_and_backward(rate);
     }
-    if input::get_key(Keycode::S, false) {
+    if input::get_key(Keycode::S) {
       self.move_forward_and_backward(-rate);
     }
-    if input::get_key(Keycode::A, false) {
+    if input::get_key(Keycode::A) {
       self.move_left_and_right(rate);
     }
-    if input::get_key(Keycode::D, false) {
+    if input::get_key(Keycode::D) {
       self.move_left_and_right(-rate);
     }
-    if input::get_key(Keycode::Space, false) {
+    if input::get_key(Keycode::Space) {
       self.move_upward_and_downward(rate);
     }
-    if input::get_key(Keycode::LShift, false) {
+    if input::get_key(Keycode::LShift) {
       self.move_upward_and_downward(-rate);
     }
   }
-  pub fn get_pv_mat(&self) -> Matrix4<f32> {
-    let proj_mat = Matrix4::new_perspective(16.0 / 9.0, self.fov, self.znear, self.zfar);
+  pub fn get_pv_mat(&self,fov:f32) -> Matrix4<f32> {
+    let proj_mat = Matrix4::new_perspective(16.0 / 9.0, fov * self.fov_rate, self.znear, self.zfar);
     let view_mat = Matrix4::look_at_rh(&self.eye, &(&self.eye + &self.toward), &self.up);
     proj_mat * view_mat
-  }
-  pub fn disable(&mut self) {
-    self.enable = false;
-  }
-  pub fn enable(&mut self) {
-    self.enable = true;
   }
 }

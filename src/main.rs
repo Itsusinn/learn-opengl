@@ -13,8 +13,10 @@ use render_gl::frame_buffer::FrameBuffer;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
 use sdl2::video::{GLProfile, SwapInterval};
+use std::ops::DerefMut;
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::RwLock;
 use std::time::Instant;
 
 #[macro_use]
@@ -32,11 +34,10 @@ pub mod render_gl;
 pub mod resources;
 mod time;
 
-const SCREEN_WIDTH: u32 = 1920;
-const SCREEN_HEIGHT: u32 = 1200;
-
 fn main() -> Result<(), anyhow::Error> {
-  println!("hello!");
+  let mut screen_width = 1920;
+  let mut screen_height = 1200;
+
   let res = Resources::from_relative_exe_path(Path::new("assets"))?;
   let sdl_context = sdl2::init().map_err(|msg| anyhow!("Sdl2 初始化失败 {}", msg))?;
   let video_subsystem = sdl_context
@@ -52,9 +53,9 @@ fn main() -> Result<(), anyhow::Error> {
 
   let mut window = video_subsystem
     .window(
-      "Egui dispaly  (SDL2 + OpenGL backend)",
-      SCREEN_WIDTH,
-      SCREEN_HEIGHT,
+      "Egui dispaly (SDL2 + OpenGL后端)",
+      screen_width,
+      screen_height,
     )
     .resizable()
     .position_centered()
@@ -78,7 +79,7 @@ fn main() -> Result<(), anyhow::Error> {
     .event_pump()
     .map_err(|msg| anyhow!("事件泵获取失败: {}", msg))?;
 
-  let mut viewport = render_gl::Viewport::for_window(SCREEN_WIDTH as i32, SCREEN_HEIGHT as i32);
+  let mut viewport = render_gl::Viewport::for_window(screen_width as i32, screen_height as i32);
   viewport.refresh(&gl);
 
   let color_buffer = render_gl::ColorBuffer::from_color(Vector3::new(1.0, 1.0, 1.0));
@@ -92,9 +93,10 @@ fn main() -> Result<(), anyhow::Error> {
 
   let mut quit = false;
   let mut input_enable = false;
-  let mut vsync = false;
-  let frame_buffer = FrameBuffer::new(&gl, SCREEN_WIDTH as i32, SCREEN_HEIGHT as i32);
-  let frame = Frame::new(&res, &gl, &frame_buffer)?;
+  let mut vsync = true;
+  // todo
+  let mut frame_buffer = FrameBuffer::new(&gl, screen_width as i32, screen_height as i32);
+  let mut frame = Frame::new(&res, &gl, &frame_buffer)?;
   time::update();
   unsafe {
     gl.Enable(gl::BLEND);
@@ -102,17 +104,10 @@ fn main() -> Result<(), anyhow::Error> {
 
   let start_time = Instant::now();
   'running: loop {
-    if !vsync {
-      window
-      .subsystem()
-      .gl_set_swap_interval(SwapInterval::Immediate)
-      .unwrap();
-    } else {
-      window
-      .subsystem()
-      .gl_set_swap_interval(SwapInterval::VSync)
-      .unwrap();
-    }
+    window.subsystem()
+    .gl_set_swap_interval(
+      if vsync { SwapInterval::VSync } else { SwapInterval::Immediate }
+    ).unwrap();
 
     egui_state.input.time = Some(start_time.elapsed().as_secs_f64());
     egui_ctx.begin_frame(egui_state.input.take());
@@ -135,7 +130,7 @@ fn main() -> Result<(), anyhow::Error> {
       gl.Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
       gl.Enable(gl::DEPTH_TEST);
     }
-    scene.render(&gl);
+    scene.render(&gl,screen_height as f32/screen_width as f32);
     frame_buffer.detach();
     unsafe {
       gl.Disable(gl::DEPTH_TEST);
@@ -143,17 +138,15 @@ fn main() -> Result<(), anyhow::Error> {
     frame.render(&gl);
 
     // egui的UI定义部分
-    egui::Window::new("Egui with SDL2 and GL").show(&egui_ctx, |ui| {
-      ui.separator();
+    egui::Window::new("Egui 主窗口")
+    .show(&egui_ctx, |ui| {
+      ui.label("使用LCtrl进入/退出摄像机模式");
       ui.label(format!("FPS: {}", 1.0 / time::get_delta()));
-      ui.label("");
-      ui.label("这是egui的演示用文本");
-      ui.label(" ");
-      if ui.selectable_label(vsync,"垂直同步").clicked() {
-        vsync = !vsync
-      };
-      ui.text_edit_multiline(&mut test_str);
-      ui.label(" ");
+      ui.checkbox(&mut vsync, "垂直同步").clicked();
+      ui.separator();
+      ui.label(format!("视窗变换 宽-{} 高-{}",viewport.w,viewport.h));
+      ui.label(format!("窗口大小 宽-{} 高-{}",window.size().0,window.size().1));
+      ui.separator();
       if ui.button("Quit").clicked() {
         quit = true;
       }
@@ -184,16 +177,23 @@ fn main() -> Result<(), anyhow::Error> {
           win_event: WindowEvent::Resized(w, h),
           ..
         } => {
-          viewport.update_size(w, h);
-          window.set_size(w as u32, h as u32).unwrap();
+          screen_width = w as u32;
+          screen_height = h as u32;
+          viewport.update_size(screen_width as i32, screen_height as i32);
+          window.set_size(screen_width, screen_height).unwrap();
+
+          frame_buffer = FrameBuffer::new(&gl, screen_width as i32, screen_height as i32);
+          frame = Frame::new(&res, &gl, &frame_buffer)?;
         }
         _ => {
-          // 将捕捉的输入传递给egui
-          egui_state.process_input(&window, event, &mut painter);
+          if !input_enable {
+            // 将捕捉的输入传递给egui
+            egui_state.process_input(&window, event, &mut painter);
+          }
         }
       }
     }
-    if input::get_key(Keycode::Escape, false) {
+    if input::get_key(Keycode::Escape) {
       quit = true;
     }
     if quit {

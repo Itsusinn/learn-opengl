@@ -204,7 +204,7 @@ impl LightCube {
     let program = render_gl::Program::from_res(gl, res, "shaders/light_cube")?;
     let light_program = render_gl::Program::from_res(gl, res, "shaders/light")?;
 
-    let dirLight = DirectLight {
+    let dir_light = DirectLight {
       light: Light {
         is_on: true,
         ambient: Vector3::new(0.05, 0.05, 0.05),
@@ -266,7 +266,7 @@ impl LightCube {
       camera: Camera::new(na::Point3::new(0.0, 0.0, 0.0)),
     })
   }
-  pub fn render(&self, gl: &gl::Gl) -> Option<()> {
+  pub fn render(&self, gl: &gl::Gl,fov:f32) -> Option<()> {
     check_error(gl);
     self.program.set_used();
     self.vao.bind();
@@ -278,7 +278,7 @@ impl LightCube {
       self.texture.get(1)?.bind();
       self
         .program
-        .upload_mat4("vp_proj", &self.camera.get_pv_mat());
+        .upload_mat4("vp_proj", &self.camera.get_pv_mat(fov));
       gl.DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null())
     }
     self.vao.unbind();

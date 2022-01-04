@@ -1,3 +1,5 @@
+use arcstr::ArcStr;
+
 use super::scene::Scene;
 use crate::geom::camera::Camera;
 use crate::render_gl;
@@ -191,7 +193,7 @@ impl Cube {
   }
 }
 impl Scene for Cube {
-  fn render(&self, gl: &gl::Gl) -> Option<()> {
+  fn render(&self, gl: &gl::Gl,fov:f32) -> Option<()> {
     check_error(gl);
     self.program.set_used();
     self.vao.bind();
@@ -203,7 +205,7 @@ impl Scene for Cube {
       self.texture.get(1)?.bind();
       self
         .program
-        .upload_mat4("vp_proj", &self.camera.get_pv_mat());
+        .upload_mat4("vp_proj", &self.camera.get_pv_mat(fov));
       gl.DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null())
     }
     self.vao.unbind();
