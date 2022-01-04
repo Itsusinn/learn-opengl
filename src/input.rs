@@ -52,15 +52,15 @@ pub fn fetch_motion() -> (i32, i32) {
   let dy = MOUSE.dy.swap(0, SeqCst);
   (dx, dy)
 }
-pub fn get_key(keycode: Keycode, default: bool) -> bool {
+pub fn get_key(keycode: Keycode) -> bool {
   let pair = KEYMAP.inner.get(&keycode);
   match pair {
-    None => return default,
+    None => return false,
     Some(pair) => return *pair,
   }
 }
-pub fn get_key_with_cooldown(keycode: Keycode, default: bool, cooltime: f32) -> bool {
-  let tv = get_key(keycode, default);
+pub fn get_key_with_cooldown(keycode: Keycode, cooltime: f32) -> bool {
+  let tv = get_key(keycode);
   // 若按键本就未按下，则返回false
   if !tv {
     return false;

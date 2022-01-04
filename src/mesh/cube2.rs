@@ -1,3 +1,5 @@
+use arcstr::ArcStr;
+
 use super::scene::Scene;
 use crate::geom::camera::Camera;
 use crate::render_gl;
@@ -14,7 +16,7 @@ struct Vertex {
   tex: data::f32_f32,
 }
 
-pub struct Cube {
+pub struct Cube2 {
   program: render_gl::Program,
   _vbo: buffer::ArrayBuffer,
   _ebo: buffer::ElementArrayBuffer,
@@ -151,9 +153,9 @@ fn gen_indices(vertices: &Vec<Vertex>) -> Vec<u32> {
   res
 }
 
-impl Cube {
-  pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Cube, anyhow::Error> {
-    let program = render_gl::Program::from_res(gl, res, "shaders/square")?;
+impl Cube2 {
+  pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Cube2, anyhow::Error> {
+    let program = render_gl::Program::from_res(gl, res, "shaders/cube2")?;
 
     let vertices: Vec<Vertex> = gen_vertices();
     let indices: Vec<u32> = gen_indices(&vertices);
@@ -180,7 +182,7 @@ impl Cube {
     program.upload_texture_slot("texture0", 0);
     program.upload_texture_slot("texture1", 1);
 
-    Ok(Cube {
+    Ok(Cube2 {
       program,
       _vbo: vbo,
       _ebo: ebo,
@@ -190,8 +192,8 @@ impl Cube {
     })
   }
 }
-impl Scene for Cube {
-  fn render(&self, gl: &gl::Gl) -> Option<()> {
+impl Scene for Cube2 {
+  fn render(&self, gl: &gl::Gl,fov:f32) -> Option<()> {
     check_error(gl);
     self.program.set_used();
     self.vao.bind();
@@ -203,7 +205,7 @@ impl Scene for Cube {
       self.texture.get(1)?.bind();
       self
         .program
-        .upload_mat4("vp_proj", &self.camera.get_pv_mat());
+        .upload_mat4("vp_proj", &self.camera.get_pv_mat(fov));
       gl.DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null())
     }
     self.vao.unbind();
@@ -216,6 +218,6 @@ impl Scene for Cube {
   }
 
   fn get_name(&self) -> ArcStr {
-    ArcStr::from("cube")
+    ArcStr::from("cube2")
   }
 }

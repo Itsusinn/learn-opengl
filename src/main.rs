@@ -84,9 +84,11 @@ fn main() -> Result<(), anyhow::Error> {
   let color_buffer = render_gl::ColorBuffer::from_color(Vector3::new(1.0, 1.0, 1.0));
   color_buffer.clear(&gl);
 
-  let mut test_str: String = "用于输入的文本框。剪切、复制、粘贴命令可用".to_owned();
-  let scene = cube::Cube::new(&res, &gl)?;
-  let mut scene: Box<dyn Scene> = Box::new(scene);
+  let mut scene_rotation: Vec<RwLock<Box<dyn Scene>>> = Vec::new();
+  scene_rotation.push(RwLock::new(Box::new(cube::Cube::new(&res, &gl)?)));
+
+  scene_rotation.push(RwLock::new(Box::new(mesh::cube2::Cube2::new(&res, &gl)?)));
+  let mut scene_index = 0;
 
   let mut quit = false;
   let mut input_enable = false;
@@ -118,7 +120,16 @@ fn main() -> Result<(), anyhow::Error> {
     viewport.refresh(&gl);
     // 自定义的OpenGL渲染部分
     time::update();
-    scene.get_camera().handle_sdl_input();
+    let mut scene_rwlock = match scene_rotation.get(scene_index) {
+      Some(scene) => scene.write().unwrap(),
+      None => scene_rotation.get(0).unwrap().write().unwrap(),
+    };
+    let scene = &mut *scene_rwlock;
+    if input_enable {
+      scene.deref_mut().get_camera().handle_sdl_input();
+    } else {
+      let _ = input::fetch_motion();
+    }
     frame_buffer.bind();
     unsafe {
       gl.Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
@@ -147,6 +158,13 @@ fn main() -> Result<(), anyhow::Error> {
         quit = true;
       }
     });
+    egui::Window::new("场景轮换指示器")
+    .resizable(false)
+    .show(&egui_ctx, |ui|{
+      ui.label("使用Tab + <-/-> 切换场景");
+      ui.label(format!("场景索引 {}",scene_index));
+      ui.label(format!("场景名称 {}",scene.get_name()));
+    });
     // egui前端完成渲染，生成后端无关的<绘制指令>
     let (egui_output, paint_cmds) = egui_ctx.end_frame();
     egui_state.process_output(&egui_output);
@@ -156,6 +174,8 @@ fn main() -> Result<(), anyhow::Error> {
     painter.paint_jobs(None, paint_jobs, &egui_ctx.texture());
     // 用OpenGL渲染结果更新窗口
     window.gl_swap_window();
+    drop(scene_rwlock);
+
     for event in event_pump.poll_iter() {
       input::handle_sdl_input(&event);
       match event {
@@ -179,14 +199,25 @@ fn main() -> Result<(), anyhow::Error> {
     if quit {
       break;
     }
-    if input::get_key_with_cooldown(Keycode::LCtrl, false, 0.2) {
+    if input::get_key(Keycode::Tab) {
+      if input::get_key_with_cooldown(Keycode::Left, 0.2) {
+        if scene_index == 0 {
+          scene_index = 0;
+        } else {
+          scene_index -= 1;
+        }
+      }
+      if input::get_key_with_cooldown(Keycode::Right, 0.2) {
+        if scene_index + 1 == scene_rotation.len() {
+          scene_index = 0;
+        } else {
+          scene_index += 1;
+        }
+      }
+    }
+    if input::get_key_with_cooldown(Keycode::LCtrl, 0.2) {
       input_enable = !input_enable;
       mouse.set_relative_mouse_mode(input_enable);
-      if input_enable {
-        scene.get_camera().enable();
-      } else {
-        scene.get_camera().disable();
-      }
     }
   }
   Ok(())
