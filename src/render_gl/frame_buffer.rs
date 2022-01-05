@@ -3,7 +3,7 @@ use crate::render_gl::debug;
 pub struct FrameBuffer {
   gl: gl::Gl,
   pub id: u32,
-  pub weight: i32,
+  pub width: i32,
   pub height: i32,
   pub texture_id: u32,
 }
@@ -15,7 +15,7 @@ impl Drop for FrameBuffer {
   }
 }
 impl FrameBuffer {
-  pub fn new(gl: &gl::Gl, weight: i32, height: i32) -> Self {
+  pub fn new(gl: &gl::Gl, width: i32, height: i32) -> Self {
     let mut fbo_id: u32 = 0;
     unsafe {
       gl.GenFramebuffers(1, &mut fbo_id);
@@ -32,7 +32,7 @@ impl FrameBuffer {
         gl::TEXTURE_2D,
         0,
         gl::RGB as i32,
-        weight,
+        width,
         height,
         0,
         gl::RGB,
@@ -54,7 +54,7 @@ impl FrameBuffer {
       gl.GenRenderbuffers(1, &mut rbo_id);
       gl.BindRenderbuffer(gl::RENDERBUFFER, rbo_id);
       // 通过glRenderbufferStorage API给RBO创建、初始化存储空间
-      gl.RenderbufferStorage(gl::RENDERBUFFER, gl::DEPTH_COMPONENT32, weight, height);
+      gl.RenderbufferStorage(gl::RENDERBUFFER, gl::DEPTH_COMPONENT32, width, height);
       // glFramebufferRenderbuffer API 将指定的RBO关联到GPU当前的FBO上。
       gl.FramebufferRenderbuffer(
         gl::FRAMEBUFFER,
@@ -74,7 +74,7 @@ impl FrameBuffer {
     Self {
       gl: gl.clone(),
       id: fbo_id,
-      weight,
+      width,
       height,
       texture_id,
     }

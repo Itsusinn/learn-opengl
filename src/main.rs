@@ -4,12 +4,13 @@ extern crate nalgebra as na;
 #[macro_use]
 extern crate lazy_static;
 
-use crate::mesh::cube;
-use crate::mesh::scene::Scene;
+use crate::scene::spin;
+use crate::scene::scene::Scene;
 use anyhow::anyhow;
 use egui_backend::{egui, DpiScaling};
 use na::Vector3;
-use render_gl::frame_buffer::FrameBuffer;
+
+use render_gl::offscreen::Offscreen;
 use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
 use sdl2::video::{GLProfile, SwapInterval};
@@ -21,15 +22,14 @@ use std::time::Instant;
 
 #[macro_use]
 extern crate render_gl_derive;
-use crate::app_frame::Frame;
+
 use crate::fonts::install_fonts;
 use crate::resources::Resources;
 
-pub mod app_frame;
 pub mod fonts;
 pub mod geom;
 pub mod input;
-pub mod mesh;
+pub mod scene;
 pub mod render_gl;
 pub mod resources;
 mod time;
@@ -53,7 +53,7 @@ fn main() -> Result<(), anyhow::Error> {
 
   let mut window = video_subsystem
     .window(
-      "Egui dispaly (SDL2 + OpenGL后端)",
+      "Another (SDL2 + OpenGL后端)",
       screen_width,
       screen_height,
     )
@@ -66,7 +66,7 @@ fn main() -> Result<(), anyhow::Error> {
     .gl_create_context()
     .map_err(|msg| anyhow!("创建GL上下文失败: {}", msg))?;
 
-  let (mut painter, mut egui_state) = egui_backend::with_sdl2(&window, DpiScaling::Custom(4.0)); // UI缩放，将影响<设备像素密度>
+  let (mut painter, mut egui_state) = egui_backend::with_sdl2(&window, DpiScaling::Custom(2.5)); // UI缩放，将影响<设备像素密度>
   let mut egui_ctx = egui::CtxRef::default();
   // 安装中文字体
   install_fonts(&egui_ctx);
@@ -85,18 +85,18 @@ fn main() -> Result<(), anyhow::Error> {
   let color_buffer = render_gl::ColorBuffer::from_color(Vector3::new(1.0, 1.0, 1.0));
   color_buffer.clear(&gl);
 
-  let mut scene_rotation: Vec<RwLock<Box<dyn Scene>>> = Vec::new();
-  scene_rotation.push(RwLock::new(Box::new(cube::Cube::new(&res, &gl)?)));
+  let mut scene_manager: Vec<RwLock<Box<dyn Scene>>> = Vec::new();
+  scene_manager.push(RwLock::new(Box::new(spin::Cube::new(&res, &gl)?)));
 
-  scene_rotation.push(RwLock::new(Box::new(mesh::cube2::Cube2::new(&res, &gl)?)));
+  scene_manager.push(RwLock::new(Box::new(scene::cube::Cube2::new(&res, &gl)?)));
   let mut scene_index = 0;
 
   let mut quit = false;
   let mut input_enable = false;
   let mut vsync = true;
   // todo
-  let mut frame_buffer = FrameBuffer::new(&gl, screen_width as i32, screen_height as i32);
-  let mut frame = Frame::new(&res, &gl, &frame_buffer)?;
+  let offscreen = Offscreen::new(&gl,&res,screen_width as i32, screen_height as i32)?;
+
   time::update();
   unsafe {
     gl.Enable(gl::BLEND);
@@ -115,9 +115,9 @@ fn main() -> Result<(), anyhow::Error> {
     viewport.refresh(&gl);
     // 自定义的OpenGL渲染部分
     time::update();
-    let mut scene_rwlock = match scene_rotation.get(scene_index) {
+    let mut scene_rwlock = match scene_manager.get(scene_index) {
       Some(scene) => scene.write().unwrap(),
-      None => scene_rotation.get(0).unwrap().write().unwrap(),
+      None => scene_manager.get(0).unwrap().write().unwrap(),
     };
     let scene = &mut *scene_rwlock;
     if input_enable {
@@ -125,23 +125,23 @@ fn main() -> Result<(), anyhow::Error> {
     } else {
       let _ = input::fetch_motion();
     }
-    frame_buffer.bind();
+    offscreen.bind();
     unsafe {
       gl.Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
       gl.Enable(gl::DEPTH_TEST);
     }
     scene.render(&gl,screen_height as f32/screen_width as f32);
-    frame_buffer.detach();
+    offscreen.detach();
     unsafe {
       gl.Disable(gl::DEPTH_TEST);
     }
-    frame.render(&gl);
+    offscreen.render_output();
 
     // egui的UI定义部分
     egui::Window::new("Egui 主窗口")
     .show(&egui_ctx, |ui| {
       ui.label("使用LCtrl进入/退出摄像机模式");
-      ui.label(format!("FPS: {}", 1.0 / time::get_delta()));
+      ui.label(format!("FPS: {}", (1.0 / time::get_delta()) as i32));
       ui.checkbox(&mut vsync, "垂直同步").clicked();
       ui.separator();
       ui.label(format!("视窗变换 宽-{} 高-{}",viewport.w,viewport.h));
@@ -182,8 +182,7 @@ fn main() -> Result<(), anyhow::Error> {
           viewport.update_size(screen_width as i32, screen_height as i32);
           window.set_size(screen_width, screen_height).unwrap();
 
-          frame_buffer = FrameBuffer::new(&gl, screen_width as i32, screen_height as i32);
-          frame = Frame::new(&res, &gl, &frame_buffer)?;
+          offscreen.resize(screen_width as i32, screen_height as i32)?;
         }
         _ => {
           if !input_enable {
@@ -208,7 +207,7 @@ fn main() -> Result<(), anyhow::Error> {
         }
       }
       if input::get_key_with_cooldown(Keycode::Right, 0.2) {
-        if scene_index + 1 == scene_rotation.len() {
+        if scene_index + 1 == scene_manager.len() {
           scene_index = 0;
         } else {
           scene_index += 1;

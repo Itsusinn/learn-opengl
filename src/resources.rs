@@ -13,7 +13,7 @@ pub enum Error {
   #[error("Failed get executable path")]
   FailedToGetExePath,
 }
-
+#[derive(Debug,Clone)]
 pub struct Resources {
   root_path: PathBuf,
 }

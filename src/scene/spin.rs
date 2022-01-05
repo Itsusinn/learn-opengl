@@ -1,8 +1,9 @@
 use arcstr::ArcStr;
+use na::Matrix4;
 
 use super::scene::Scene;
 use crate::geom::camera::Camera;
-use crate::render_gl;
+use crate::{render_gl, time};
 use crate::render_gl::debug::check_error;
 use crate::render_gl::{buffer, data, texture};
 use crate::resources::Resources;
@@ -16,12 +17,13 @@ struct Vertex {
   tex: data::f32_f32,
 }
 
-pub struct Cube2 {
+pub struct Cube {
   program: render_gl::Program,
   _vbo: buffer::ArrayBuffer,
   _ebo: buffer::ElementArrayBuffer,
   vao: buffer::VertexArray,
   texture: Vec<texture::Texture>,
+  spin: Matrix4<f32>,
   camera: Camera,
 }
 fn gen_vertices() -> Vec<Vertex> {
@@ -153,9 +155,9 @@ fn gen_indices(vertices: &Vec<Vertex>) -> Vec<u32> {
   res
 }
 
-impl Cube2 {
-  pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Cube2, anyhow::Error> {
-    let program = render_gl::Program::from_res(gl, res, "shaders/cube2")?;
+impl Cube {
+  pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Cube, anyhow::Error> {
+    let program = render_gl::Program::from_res(gl, res, "shaders/spin")?;
 
     let vertices: Vec<Vertex> = gen_vertices();
     let indices: Vec<u32> = gen_indices(&vertices);
@@ -177,35 +179,37 @@ impl Cube2 {
     // 注意这里有一个自动绑定机制
     vao.unbind();
     let texture0 = texture::Texture::from_res(&gl, &res, "textures/container.jpg")?;
-    let texture1 = texture::Texture::from_res(&gl, res, "textures/awesomeface.png")?;
     //告诉OpenGL每个着色器采样器属于哪个纹理单元
     program.upload_texture_slot("texture0", 0);
     program.upload_texture_slot("texture1", 1);
 
-    Ok(Cube2 {
+    Ok(Cube {
       program,
       _vbo: vbo,
       _ebo: ebo,
       vao,
-      texture: vec![texture0, texture1],
+      texture: vec![texture0],
       camera: Camera::new(na::Point3::new(0.0, 0.0, 0.0)),
+      spin: Matrix4::new_rotation(na::Vector3::new(0.0, 0.0, 0.0)),
     })
   }
 }
-impl Scene for Cube2 {
+impl Scene for Cube {
   fn render(&self, gl: &gl::Gl,fov:f32) -> Option<()> {
+    let time = time::get_now();
+    let angel_x = (2.3 * time).sin();
+    let angel_y = (0.3 * time).sin();
+    let angel_z = (3.7 * time).sin();
+    let spin = Matrix4::from_euler_angles(angel_x, angel_y, angel_z);
     check_error(gl);
     self.program.set_used();
     self.vao.bind();
     unsafe {
-      // 绑定两个纹理到对应的纹理单元
+      // 绑定纹理到对应的纹理单元
       gl.ActiveTexture(gl::TEXTURE0);
       self.texture.get(0)?.bind();
-      gl.ActiveTexture(gl::TEXTURE1);
-      self.texture.get(1)?.bind();
-      self
-        .program
-        .upload_mat4("vp_proj", &self.camera.get_pv_mat(fov));
+      self.program.upload_mat4("vp_proj", &self.camera.get_vp_mat(fov));
+      self.program.upload_mat4("m_proj", &spin);
       gl.DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null())
     }
     self.vao.unbind();
@@ -218,6 +222,6 @@ impl Scene for Cube2 {
   }
 
   fn get_name(&self) -> ArcStr {
-    ArcStr::from("cube2")
+    ArcStr::from("spinning cube")
   }
 }

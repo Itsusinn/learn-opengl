@@ -1,4 +1,4 @@
-pub mod cube;
+pub mod spin;
 mod light_cube;
 pub mod scene;
-pub mod cube2;
+pub mod cube;
