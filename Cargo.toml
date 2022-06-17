@@ -16,7 +16,6 @@ egui = "*"
 egui_sdl2_gl = "0.16.0"
 # GL
 glow = { version = "0.11.2"}
-# another_gl = { path = "lib/another_gl" }
 render_gl_derive = { path = "lib/render_gl_derive" }
 # error-handling
 thiserror = "1.0"
