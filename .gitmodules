@@ -1,3 +1,0 @@
-[submodule "lib/rust-stb-image"]
-	path = lib/rust-stb-image
-	url = git@github.com:Itsusinn/rust-stb-image.git
