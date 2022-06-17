@@ -1,6 +1,7 @@
 use std::sync::atomic::AtomicI32;
 
 use dashmap::DashMap;
+use once_cell::sync::Lazy;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use std::ops::Deref;
@@ -8,11 +9,9 @@ use std::sync::atomic::Ordering::SeqCst;
 
 use crate::time;
 
-lazy_static! {
-  static ref KEYMAP: KeyMap = KeyMap::new();
-  static ref MOUSE: Mouse = Mouse::new();
-  static ref COOLDOWN_MAP: DashMap<Keycode, f32> = DashMap::new();
-}
+static KEYMAP: Lazy<KeyMap> = Lazy::new(|| { KeyMap::new() });
+static MOUSE: Lazy<Mouse> = Lazy::new(|| { Mouse::new() });
+static COOLDOWN_MAP: Lazy<DashMap<Keycode, f32>> = Lazy::new(|| { DashMap::new() });
 
 struct Mouse {
   dx: AtomicI32,

@@ -1,7 +1,5 @@
 extern crate egui_sdl2_gl as egui_backend;
 extern crate nalgebra as na;
-#[macro_use]
-extern crate lazy_static;
 
 use crate::scene::scene::Scene;
 use crate::scene::spin;
