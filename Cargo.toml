@@ -23,7 +23,7 @@ anyhow = "1.0"
 vec-2-10-10-10 = "0.1.2"
 nalgebra = "0.31.0"
 # assests
-stb_image = { path = "lib/rust-stb-image"}
+image = { version = "0.24.2",default-features = false,features = ["jpeg","png"]}
 # russimp = "1.0.1"
 gltf = "1.0.0"
 arcstr = "1.1.3"

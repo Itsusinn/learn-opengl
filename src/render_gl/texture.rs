@@ -1,10 +1,9 @@
 use std::{io, path::PathBuf};
 
-use another::any_as_u8_slice;
 use glow::HasContext;
-use stb_image::image::{self, LoadResult};
 use thiserror::Error;
 
+use image::io::Reader as ImageReader;
 use crate::{resources::Resources, GL};
 
 #[derive(Debug, Error)]
@@ -19,11 +18,10 @@ pub struct Texture {
 }
 impl Texture {
   pub fn new(path: PathBuf) -> Result<Texture, Error> {
-    image::stbi_set_flip_vertically_on_load(true);
-    let result = image::load(path);
-    if let LoadResult::Error(msg) = result {
-      return Err(Error::LoadError(msg));
-    }
+
+
+    let img = ImageReader::open(path)?.decode().unwrap();
+
     let texture = unsafe { GL.create_texture().unwrap() };
     unsafe {
       GL.bind_texture(glow::TEXTURE_2D, Some(texture));
@@ -40,20 +38,20 @@ impl Texture {
         glow::LINEAR as i32,
       );
     }
-    match result {
-      LoadResult::ImageF32(data) => unsafe {
-        upload_texture_data(
-          data.width,
-          data.height,
-          data.depth,
-          any_as_u8_slice(data.data.as_slice()).to_vec(),
-        );
-      },
-      LoadResult::ImageU8(data) => unsafe {
-        upload_texture_data(data.width, data.height, data.depth, data.data);
-      },
-      _ => {
-        panic!("不可达的代码")
+
+    unsafe {
+      match img {
+        image::DynamicImage::ImageRgb8(_)
+        |image::DynamicImage::ImageRgb16(_)
+        |image::DynamicImage::ImageRgb32F(_)  => {
+          upload_texture_data(img.width(), img.height(), 3, img.as_bytes())
+        },
+        image::DynamicImage::ImageRgba8(_)
+        |image::DynamicImage::ImageRgba16(_)
+        |image::DynamicImage::ImageRgba32F(_) => {
+          upload_texture_data(img.width(), img.height(), 4, img.as_bytes())
+        },
+        _ => unimplemented!(),
       }
     }
     unsafe {
@@ -85,7 +83,7 @@ impl Drop for Texture {
   }
 }
 
-unsafe fn upload_texture_data(width: usize, height: usize, channels: usize, pixels: Vec<u8>) {
+unsafe fn upload_texture_data(width: u32, height: u32, channels: i32, pixels: &[u8]) {
   match channels {
     3 => {
       GL.tex_image_2d(
