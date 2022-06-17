@@ -1,12 +1,8 @@
 use crate::time;
-use na::{Matrix4, Point3, Unit, Vector3};
+use na::{Matrix4, Point3, Vector3};
 use sdl2::keyboard::Keycode;
 
 use super::input;
-
-lazy_static! {
-  static ref Y_AXIS: Unit<Vector3<f32>> = Vector3::y_axis();
-}
 
 pub struct Camera {
   // 摄像机的位置
@@ -24,13 +20,13 @@ pub struct Camera {
   // 远平面距离
   zfar: f32,
   // 视域(角度)
-  fov_rate: f32
+  fov: f32,
 }
 impl Camera {
   pub fn new(eye: Point3<f32>) -> Self {
     // 格拉姆—施密特正交化(Gram-Schmidt Process)。 <https://en.wikipedia.org/wiki/Gram-Schmidt_process>
     let toward = Vector3::new(0.0, 0.0, -1.0);
-    let right = Y_AXIS.cross(&toward);
+    let right = Vector3::y_axis().cross(&toward);
     let up = toward.cross(&right).normalize();
     Camera {
       eye,
@@ -40,11 +36,8 @@ impl Camera {
       yaw: -90.0,
       znear: 1.0,
       zfar: 10000.0,
-      fov_rate: 1.0
+      fov: 95.0,
     }
-  }
-  pub fn update_fov_rate(&mut self, fov_rate:f32){
-    self.fov_rate = fov_rate;
   }
 
   pub fn move_forward_and_backward(&mut self, distance: f32) {
@@ -53,7 +46,7 @@ impl Camera {
     self.eye += delta
   }
   pub fn move_left_and_right(&mut self, distance: f32) {
-    let right = Y_AXIS.cross(&self.toward).normalize();
+    let right = Vector3::y_axis().cross(&self.toward).normalize();
     let delta = right * distance;
     self.eye += delta;
   }
@@ -80,7 +73,7 @@ impl Camera {
   }
   // Gram-Schmidt Process
   fn gs_process(&mut self) {
-    let right = Y_AXIS.cross(&self.toward);
+    let right = Vector3::y_axis().cross(&self.toward);
     self.up = self.toward.cross(&right).normalize();
   }
   pub fn handle_sdl_input(&mut self) {
@@ -111,9 +104,16 @@ impl Camera {
       self.move_upward_and_downward(-rate);
     }
   }
-  pub fn get_pv_mat(&self,fov:f32) -> Matrix4<f32> {
-    let proj_mat = Matrix4::new_perspective(16.0 / 9.0, fov * self.fov_rate, self.znear, self.zfar);
-    let view_mat = Matrix4::look_at_rh(&self.eye, &(&self.eye + &self.toward), &self.up);
-    proj_mat * view_mat
+  // 获取摄像机的视图矩阵
+  pub fn get_view_mat(&self) -> Matrix4<f32> {
+    Matrix4::look_at_rh(&self.eye, &(&self.eye + &self.toward), &self.up)
+  }
+  // 获得透视投影矩阵
+  // aspect: 宽高比
+  pub fn get_proj_mat(&self, aspect: f32) -> Matrix4<f32> {
+    Matrix4::new_perspective(aspect, self.fov, self.znear, self.zfar)
+  }
+  pub fn get_vp_mat(&self, aspect: f32) -> Matrix4<f32> {
+    self.get_proj_mat(aspect) * self.get_view_mat()
   }
 }

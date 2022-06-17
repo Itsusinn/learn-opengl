@@ -1,12 +1,13 @@
 use arcstr::ArcStr;
+use glow::HasContext;
 use na::Matrix4;
 
 use super::scene::Scene;
 use crate::geom::camera::Camera;
-use crate::{render_gl, time};
 use crate::render_gl::debug::check_error;
 use crate::render_gl::{buffer, data, texture};
 use crate::resources::Resources;
+use crate::{render_gl, time, GL};
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -23,7 +24,6 @@ pub struct Cube {
   _ebo: buffer::ElementArrayBuffer,
   vao: buffer::VertexArray,
   texture: Vec<texture::Texture>,
-  spin: Matrix4<f32>,
   camera: Camera,
 }
 fn gen_vertices() -> Vec<Vertex> {
@@ -156,32 +156,31 @@ fn gen_indices(vertices: &Vec<Vertex>) -> Vec<u32> {
 }
 
 impl Cube {
-  pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Cube, anyhow::Error> {
-    let program = render_gl::Program::from_res(gl, res, "shaders/spin")?;
+  pub fn new(res: &Resources) -> Result<Cube, anyhow::Error> {
+    let program = render_gl::Program::from_res(res, "shaders/spin")?;
 
     let vertices: Vec<Vertex> = gen_vertices();
     let indices: Vec<u32> = gen_indices(&vertices);
 
-    let vbo = buffer::ArrayBuffer::new(gl);
+    let vbo = buffer::ArrayBuffer::new();
     vbo.bind();
     vbo.static_draw_data(&vertices);
     vbo.unbind();
-    let ebo = buffer::ElementArrayBuffer::new(gl);
+    let ebo = buffer::ElementArrayBuffer::new();
     ebo.bind();
     ebo.static_draw_data(&indices);
     ebo.unbind();
-    let vao = buffer::VertexArray::new(gl);
+    let vao = buffer::VertexArray::new();
 
     vao.bind();
     vbo.bind();
     ebo.bind();
-    Vertex::vertex_attrib_pointers(gl);
+    Vertex::vertex_attrib_pointers();
     // 注意这里有一个自动绑定机制
     vao.unbind();
-    let texture0 = texture::Texture::from_res(&gl, &res, "textures/container.jpg")?;
+    let texture0 = texture::Texture::from_res(&res, "textures/container.jpg")?;
     //告诉OpenGL每个着色器采样器属于哪个纹理单元
     program.upload_texture_slot("texture0", 0);
-    program.upload_texture_slot("texture1", 1);
 
     Ok(Cube {
       program,
@@ -190,27 +189,28 @@ impl Cube {
       vao,
       texture: vec![texture0],
       camera: Camera::new(na::Point3::new(0.0, 0.0, 0.0)),
-      spin: Matrix4::new_rotation(na::Vector3::new(0.0, 0.0, 0.0)),
     })
   }
 }
 impl Scene for Cube {
-  fn render(&self, gl: &gl::Gl,fov:f32) -> Option<()> {
+  fn render(&self, aspect: f32) -> Option<()> {
     let time = time::get_now();
     let angel_x = (2.3 * time).sin();
     let angel_y = (0.3 * time).sin();
     let angel_z = (3.7 * time).sin();
     let spin = Matrix4::from_euler_angles(angel_x, angel_y, angel_z);
-    check_error(gl);
+    check_error();
     self.program.set_used();
     self.vao.bind();
     unsafe {
       // 绑定纹理到对应的纹理单元
-      gl.ActiveTexture(gl::TEXTURE0);
+      GL.active_texture(glow::TEXTURE0);
       self.texture.get(0)?.bind();
-      self.program.upload_mat4("vp_proj", &self.camera.get_vp_mat(fov));
+      self
+        .program
+        .upload_mat4("vp_proj", &self.camera.get_vp_mat(aspect));
       self.program.upload_mat4("m_proj", &spin);
-      gl.DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null())
+      GL.draw_elements(glow::TRIANGLES, 36, glow::UNSIGNED_INT, 0);
     }
     self.vao.unbind();
     self.program.detach();
@@ -223,5 +223,12 @@ impl Scene for Cube {
 
   fn get_name(&self) -> ArcStr {
     ArcStr::from("spinning cube")
+  }
+
+  fn as_any(&self) -> &dyn std::any::Any {
+    self
+  }
+  fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+    self
   }
 }

@@ -1,34 +1,33 @@
 use std::sync::RwLock;
 
-use crate::render_gl;
+use glow::HasContext;
+
 use crate::render_gl::debug::check_error;
 use crate::render_gl::frame_buffer::FrameBuffer;
 use crate::render_gl::{buffer, data};
 use crate::resources::Resources;
+use crate::{render_gl, GL};
 
-
-pub struct Offscreen {
+pub struct OffScreen {
   pub frame_buffer: RwLock<FrameBuffer>,
   pub render: RwLock<Render>,
-  gl: gl::Gl,
-  res: Resources
+  res: Resources,
 }
-impl Offscreen {
-  pub fn new(gl: &gl::Gl,res: &Resources,width: i32, height: i32) -> anyhow::Result<Self> {
-    let frame_buffer = FrameBuffer::new(&gl, width, height);
-    let render = Render::new(&res, &gl, &frame_buffer)?;
+impl OffScreen {
+  pub fn new(res: &Resources, width: i32, height: i32) -> anyhow::Result<Self> {
+    let frame_buffer = FrameBuffer::new(width, height);
+    let render = Render::new(&res, &frame_buffer)?;
     Ok(Self {
       frame_buffer: RwLock::new(frame_buffer),
       render: RwLock::new(render),
-      gl: gl.clone(),
       res: res.clone(),
     })
   }
-  pub fn resize(&self,width: i32, height: i32) -> anyhow::Result<()> {
+  pub fn resize(&self, width: i32, height: i32) -> anyhow::Result<()> {
     let mut frame_buffer = self.frame_buffer.write().unwrap();
-    *frame_buffer = FrameBuffer::new(&self.gl, width, height);
+    *frame_buffer = FrameBuffer::new(width, height);
     let mut render = self.render.write().unwrap();
-    *render = Render::new(&self.res, &self.gl, &frame_buffer)?;
+    *render = Render::new(&self.res, &frame_buffer)?;
     Ok(())
   }
   pub fn bind(&self) {
@@ -38,7 +37,7 @@ impl Offscreen {
     self.frame_buffer.read().unwrap().detach();
   }
   pub fn render_output(&self) {
-    self.render.read().unwrap().render(&self.gl);
+    self.render.read().unwrap().render();
   }
 }
 
@@ -56,17 +55,12 @@ pub struct Render {
   _vbo: buffer::ArrayBuffer,
   _ebo: buffer::ElementArrayBuffer,
   vao: buffer::VertexArray,
-  texture_id: u32,
-  gl: gl::Gl
+  texture: glow::Texture,
 }
 
 impl Render {
-  pub fn new(
-    res: &Resources,
-    gl: &gl::Gl,
-    frame_buffer: &FrameBuffer,
-  ) -> Result<Self, anyhow::Error> {
-    let program = render_gl::Program::from_res(gl, res, "shaders/offscreen")?;
+  pub fn new(res: &Resources, frame_buffer: &FrameBuffer) -> Result<Self, anyhow::Error> {
+    let program = render_gl::Program::from_res(res, "shaders/offscreen")?;
 
     let vertices: Vec<Vertex> = vec![
       //   2  1
@@ -89,20 +83,20 @@ impl Render {
       }, // bottom left
     ];
     let indices: Vec<u32> = vec![0, 1, 2, 0, 2, 3];
-    let vbo = buffer::ArrayBuffer::new(gl);
+    let vbo = buffer::ArrayBuffer::new();
     vbo.bind();
     vbo.static_draw_data(&vertices);
     vbo.unbind();
-    let ebo = buffer::ElementArrayBuffer::new(gl);
+    let ebo = buffer::ElementArrayBuffer::new();
     ebo.bind();
     ebo.static_draw_data(&indices);
     ebo.unbind();
-    let vao = buffer::VertexArray::new(gl);
+    let vao = buffer::VertexArray::new();
 
     vao.bind();
     vbo.bind();
     ebo.bind();
-    Vertex::vertex_attrib_pointers(gl);
+    Vertex::vertex_attrib_pointers();
     // 注意这里有一个自动绑定机制
     vao.unbind();
     // program.upload_texture_slot("frame", 0);
@@ -111,29 +105,21 @@ impl Render {
       _vbo: vbo,
       _ebo: ebo,
       vao,
-      texture_id: frame_buffer.texture_id,
-      gl: gl.clone(),
+      texture: frame_buffer.texture,
     })
   }
-  pub fn render(&self, gl: &gl::Gl) -> Option<()> {
-    check_error(gl);
+  pub fn render(&self) -> Option<()> {
+    check_error();
     self.program.set_used();
     self.vao.bind();
     unsafe {
-      gl.ActiveTexture(gl::TEXTURE0);
-      gl.BindTexture(gl::TEXTURE_2D, self.texture_id);
-      gl.DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, std::ptr::null())
+      GL.active_texture(glow::TEXTURE0);
+      GL.bind_texture(glow::TEXTURE_2D, Some(self.texture));
+      GL.draw_elements(glow::TRIANGLES, 6, glow::UNSIGNED_INT, 0);
     }
     self.vao.unbind();
     self.program.detach();
-    check_error(gl);
+    check_error();
     Some(())
-  }
-}
-impl Drop for Render {
-  fn drop(&mut self) {
-    unsafe {
-      self.gl.DeleteTextures(1, &self.texture_id);
-    }
   }
 }

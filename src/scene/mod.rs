@@ -1,4 +1,4 @@
-pub mod spin;
-mod light_cube;
-pub mod scene;
 pub mod cube;
+pub mod phong;
+pub mod scene;
+pub mod spin;

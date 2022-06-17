@@ -21,7 +21,7 @@ pub fn vertex_attrib_pointers_derive(
    let expanded: proc_macro2::TokenStream = quote! {
       impl #ident #generics #where_clause {
          #[allow(unused_variables)]
-         pub fn vertex_attrib_pointers(gl: &gl::Gl) {
+         pub fn vertex_attrib_pointers() {
             let stride = std::mem::size_of::<Self>();
             let offset = 0;
             #(#fields_vertex_attrib_pointer)*
@@ -79,7 +79,7 @@ fn generate_struct_field_vertex_attrib_pointer_call(
    quote! {
       let location = #location_value;
       unsafe {
-         #field_ty::vertex_attrib_pointer(gl, stride, location, offset);
+         #field_ty::vertex_attrib_pointer(stride, location, offset);
       }
       let offset = offset + std::mem::size_of::<#field_ty>();
    }

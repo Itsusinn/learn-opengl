@@ -13,7 +13,7 @@ pub enum Error {
   #[error("Failed get executable path")]
   FailedToGetExePath,
 }
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct Resources {
   root_path: PathBuf,
 }
@@ -43,6 +43,19 @@ impl Resources {
     }
 
     Ok(unsafe { CString::from_vec_unchecked(buffer) })
+  }
+  pub fn load_string(&self, resource_name: &str) -> Result<String, Error> {
+    let mut file = fs::File::open(resource_name_to_path(&self.root_path, resource_name))?;
+
+    let mut buffer = Vec::with_capacity(file.metadata()?.len() as usize + 1);
+    file.read_to_end(&mut buffer)?;
+
+    //  检查空字符'\0'
+    if buffer.iter().any(|i| *i == 0) {
+      return Err(Error::FileContainsNil);
+    }
+
+    Ok(unsafe { String::from_utf8_unchecked(buffer) })
   }
 }
 

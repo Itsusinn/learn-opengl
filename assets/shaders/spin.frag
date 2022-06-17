@@ -3,7 +3,9 @@ out vec4 fragColor;
 in VS_OUTPUT {
     vec2 TexCoord;
 } IN;
+
 uniform sampler2D texture0;
+
 void main()
 {
     // fragColor = IN.Color;

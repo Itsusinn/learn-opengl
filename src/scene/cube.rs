@@ -1,11 +1,12 @@
 use arcstr::ArcStr;
+use glow::HasContext;
 
 use super::scene::Scene;
 use crate::geom::camera::Camera;
-use crate::render_gl;
 use crate::render_gl::debug::check_error;
 use crate::render_gl::{buffer, data, texture};
 use crate::resources::Resources;
+use crate::{render_gl, GL};
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -154,30 +155,30 @@ fn gen_indices(vertices: &Vec<Vertex>) -> Vec<u32> {
 }
 
 impl Cube2 {
-  pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Cube2, anyhow::Error> {
-    let program = render_gl::Program::from_res(gl, res, "shaders/cube2")?;
+  pub fn new(res: &Resources) -> Result<Cube2, anyhow::Error> {
+    let program = render_gl::Program::from_res(res, "shaders/cube")?;
 
     let vertices: Vec<Vertex> = gen_vertices();
     let indices: Vec<u32> = gen_indices(&vertices);
 
-    let vbo = buffer::ArrayBuffer::new(gl);
+    let vbo = buffer::ArrayBuffer::new();
     vbo.bind();
     vbo.static_draw_data(&vertices);
     vbo.unbind();
-    let ebo = buffer::ElementArrayBuffer::new(gl);
+    let ebo = buffer::ElementArrayBuffer::new();
     ebo.bind();
     ebo.static_draw_data(&indices);
     ebo.unbind();
-    let vao = buffer::VertexArray::new(gl);
+    let vao = buffer::VertexArray::new();
 
     vao.bind();
     vbo.bind();
     ebo.bind();
-    Vertex::vertex_attrib_pointers(gl);
+    Vertex::vertex_attrib_pointers();
     // 注意这里有一个自动绑定机制
     vao.unbind();
-    let texture0 = texture::Texture::from_res(&gl, &res, "textures/container.jpg")?;
-    let texture1 = texture::Texture::from_res(&gl, res, "textures/awesomeface.png")?;
+    let texture0 = texture::Texture::from_res(&res, "textures/container.jpg")?;
+    let texture1 = texture::Texture::from_res(res, "textures/awesomeface.png")?;
     //告诉OpenGL每个着色器采样器属于哪个纹理单元
     program.upload_texture_slot("texture0", 0);
     program.upload_texture_slot("texture1", 1);
@@ -193,18 +194,20 @@ impl Cube2 {
   }
 }
 impl Scene for Cube2 {
-  fn render(&self, gl: &gl::Gl,fov:f32) -> Option<()> {
-    check_error(gl);
+  fn render(&self, aspect: f32) -> Option<()> {
+    check_error();
     self.program.set_used();
     self.vao.bind();
     unsafe {
       // 绑定两个纹理到对应的纹理单元
-      gl.ActiveTexture(gl::TEXTURE0);
+      GL.active_texture(glow::TEXTURE0);
       self.texture.get(0)?.bind();
-      gl.ActiveTexture(gl::TEXTURE1);
+      GL.active_texture(glow::TEXTURE1);
       self.texture.get(1)?.bind();
-      self.program.upload_mat4("vp_proj", &self.camera.get_vp_mat(fov));
-      gl.DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null())
+      self
+        .program
+        .upload_mat4("vp_proj", &self.camera.get_vp_mat(aspect));
+      GL.draw_elements(glow::TRIANGLES, 36, glow::UNSIGNED_INT, 0);
     }
     self.vao.unbind();
     self.program.detach();
@@ -217,5 +220,11 @@ impl Scene for Cube2 {
 
   fn get_name(&self) -> ArcStr {
     ArcStr::from("cube")
+  }
+  fn as_any(&self) -> &dyn std::any::Any {
+    self
+  }
+  fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+    self
   }
 }

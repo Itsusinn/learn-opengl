@@ -2,10 +2,10 @@ pub mod buffer;
 pub mod data;
 pub mod debug;
 pub mod frame_buffer;
+pub mod offscreen;
 mod shader;
 pub mod texture;
 mod viewport;
-pub mod offscreen;
 
 pub use self::shader::{Error, Program, Shader};
 pub use self::viewport::Viewport;

@@ -1,3 +1,7 @@
+use glow::HasContext;
+
+use crate::GL;
+
 ///视窗变换
 pub struct Viewport {
   pub x: i32,
@@ -17,9 +21,9 @@ impl Viewport {
     self.h = h;
   }
 
-  pub fn refresh(&self, gl: &gl::Gl) {
+  pub fn refresh(&self) {
     unsafe {
-      gl.Viewport(self.x, self.y, self.w, self.h);
+      GL.viewport(self.x, self.y, self.w, self.h);
     }
   }
 }

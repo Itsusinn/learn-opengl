@@ -1,10 +1,12 @@
-use egui::{FontDefinitions, FontFamily};
+use egui::{FontData, FontDefinitions, FontFamily};
 
 pub fn install_fonts(egui_ctx: &egui::CtxRef) {
   let mut fonts = FontDefinitions::default();
   fonts.font_data.insert(
     "LXGWWenKai-Regular".to_owned(),
-    std::borrow::Cow::Borrowed(include_bytes!("../assets/fonts/LXGWWenKai-Regular.ttf")),
+    FontData::from_static(include_bytes!(
+      "../static-assets/fonts/LXGWWenKai-Regular.ttf"
+    )),
   );
   fonts
     .fonts_for_family

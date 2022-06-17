@@ -2,36 +2,32 @@
 name = "another"
 version = "0.1.0"
 authors = ["Itsusinn奕䜣 <itsusinn@foxmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 lazy_static = "1.4.0"
-dashmap = "5.0.0"
+once_cell = "1.12.0"
+dashmap = "5.2.0"
 atomic_float = "0.1.0"
 serde = "1.0"
 # GL-Framework&UI
-# sdl2 = { version = "0.34", features = ["bundled", "static-link"] }
-egui = "0.15.0"
-egui_sdl2_gl = "0.15.0"
+sdl2 = { version = "*", features = ["bundled", "static-link"] }
+egui = "*"
+egui_sdl2_gl = "0.16.0"
 # GL
-another_gl = { path = "lib/another_gl" }
+glow = { version = "0.11.2"}
+# another_gl = { path = "lib/another_gl" }
 render_gl_derive = { path = "lib/render_gl_derive" }
 # error-handling
 thiserror = "1.0"
 anyhow = "1.0"
 # math
 vec-2-10-10-10 = "0.1.2"
-nalgebra = "0.29.0"
+nalgebra = "0.31.0"
 # assests
 stb_image = { path = "lib/rust-stb-image"}
-russimp = "0.2.3"
-arcstr = "1.1.1"
+# russimp = "1.0.1"
+gltf = "1.0.0"
+arcstr = "1.1.3"
 [build-dependencies]
 walkdir = "2.3.1"
-
-[features]
-gl_debug = ["another_gl/debug"]
-
-[dependencies.sdl2]
-version = "0.34.5"
-features = ["bundled","static-link"]
