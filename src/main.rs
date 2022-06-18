@@ -7,7 +7,7 @@ use another::LateInit;
 use anyhow::anyhow;
 use egui_backend::{DpiScaling, ShaderVersion};
 use glow::HasContext;
-use na::{Vector3, Vector4};
+use na::Vector3;
 
 use render_gl::offscreen::OffScreen;
 use sdl2::event::{Event, WindowEvent};
@@ -97,7 +97,6 @@ fn main() -> Result<(), anyhow::Error> {
   let mut input_enable = false;
   let mut vsync = true;
 
-  let mut ambient_light = Vector4::<f32>::new(1.0, 1.0, 1.0, 1.0);
   // todo
   let offscreen = OffScreen::new(&res, screen_width as i32, screen_height as i32)?;
 
@@ -168,23 +167,8 @@ fn main() -> Result<(), anyhow::Error> {
         ui.label(format!("场景索引 {}", scene_index));
         ui.label(format!("场景名称 {}", scene.get_name()));
       });
-    if scene.get_name() == "phong" {
-      let phong_scene = scene
-        .deref_mut()
-        .as_any_mut()
-        .downcast_mut::<scene::phong::Cube>()
-        .unwrap();
-      egui::Window::new("Phong光照设置")
-        .resizable(false)
-        .show(&egui_ctx, |ui| {
-          ui.horizontal(|ui| {
-            ui.label("Ambient环境光");
-            let light = ambient_light.as_mut_slice();
-            ui.color_edit_button_rgba_premultiplied(light.try_into().unwrap());
-          });
-        });
-      phong_scene.update(&ambient_light);
-    }
+    scene.render_window(&egui_ctx);
+
     // egui前端完成渲染，生成后端无关的<绘制指令>
     let (egui_output, paint_cmds) = egui_ctx.end_frame();
     egui_state.process_output(&window, &egui_output);

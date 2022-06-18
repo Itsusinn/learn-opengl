@@ -224,11 +224,4 @@ impl Scene for Cube {
   fn get_name(&self) -> ArcStr {
     ArcStr::from("spinning cube")
   }
-
-  fn as_any(&self) -> &dyn std::any::Any {
-    self
-  }
-  fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-    self
-  }
 }

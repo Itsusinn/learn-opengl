@@ -2,7 +2,7 @@ use crate::resources;
 use crate::resources::Resources;
 use crate::GL;
 use glow::HasContext;
-use na::{Matrix3, Matrix4, Vector2, Vector3, Vector4};
+use na::{Matrix3, Matrix4, Vector2, Vector3, Vector4, Point3};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -34,48 +34,56 @@ impl Program {
     Ok(Program::from_shaders(&shaders[..])?)
   }
 
-  pub fn upload_texture_slot(&self, name: &str, slot: i32) {
+  pub fn upload_texture_slot(&self, name: &str, slot: i32)  -> Option<()> {
     self.set_used();
     unsafe {
-      let location = GL.get_uniform_location(self.inner, name).unwrap();
+      let location = GL.get_uniform_location(self.inner, name)?;
       GL.uniform_1_i32(Some(&location), slot);
+      Some(())
     }
   }
-  pub fn upload_mat4(&self, name: &str, mat4: &Matrix4<f32>) {
+  pub fn upload_mat4(&self, name: &str, mat4: &Matrix4<f32>) -> Option<()>  {
     self.set_used();
     unsafe {
-      let location = GL.get_uniform_location(self.inner, name).unwrap();
+      let location = GL.get_uniform_location(self.inner, name)?;
       GL.uniform_matrix_4_f32_slice(Some(&location), false, mat4.as_slice());
+      Some(())
     }
   }
-  pub fn upload_mat3(&self, name: &str, mat3: &Matrix3<f32>) {
+  pub fn upload_mat3(&self, name: &str, mat3: &Matrix3<f32>) -> Option<()> {
     self.set_used();
     unsafe {
-      let location = GL.get_uniform_location(self.inner, name).unwrap();
+      let location = GL.get_uniform_location(self.inner, name)?;
       GL.uniform_matrix_3_f32_slice(Some(&location), false, mat3.as_slice());
+      Some(())
     }
   }
-  pub fn upload_vec2(&self, name: &str, vec2: &Vector2<f32>) {
+  pub fn upload_vec2(&self, name: &str, vec2: &Vector2<f32>)  -> Option<()> {
     self.set_used();
     unsafe {
-      let location = GL.get_uniform_location(self.inner, name).unwrap();
+      let location = GL.get_uniform_location(self.inner, name)?;
       GL.uniform_2_f32(Some(&location), vec2.x, vec2.y);
+      Some(())
     }
   }
 
-  pub fn upload_vec3(&self, name: &str, vec3: &Vector3<f32>) {
+  pub fn upload_vec3(&self, name: &str, vec3: &Vector3<f32>) -> Option<()>  {
     self.set_used();
     unsafe {
-      let location = GL.get_uniform_location(self.inner, name).unwrap();
+      let location = GL.get_uniform_location(self.inner, name)?;
       GL.uniform_3_f32(Some(&location), vec3.x, vec3.y, vec3.z);
+      Some(())
     }
   }
-
-  pub fn upload_vec4(&self, name: &str, vec4: &Vector4<f32>) {
+  pub fn upload_point3(&self, name: &str, point3: &Point3<f32>) -> Option<()>  {
+    self.upload_vec3(name, &point3.coords)
+  }
+  pub fn upload_vec4(&self, name: &str, vec4: &Vector4<f32>) -> Option<()>  {
     self.set_used();
     unsafe {
-      let location = GL.get_uniform_location(self.inner, name).unwrap();
+      let location = GL.get_uniform_location(self.inner, name)?;
       GL.uniform_4_f32(Some(&location), vec4.x, vec4.y, vec4.z, vec4.w);
+      Some(())
     }
   }
 
@@ -146,20 +154,20 @@ impl Shader {
       inner: e,
     })?;
 
-    Shader::from_source(&source, shader_kind)
+    Shader::from_source(&source, shader_kind,name)
   }
 
-  pub fn from_source(source: &str, kind: u32) -> Result<Shader, Error> {
-    let inner = shader_from_source(source, kind)?;
+  pub fn from_source(source: &str, kind: u32,name: &str) -> Result<Shader, Error> {
+    let inner = shader_from_source(source, kind,name)?;
     Ok(Shader { inner })
   }
 
-  pub fn from_vert_source(source: &str) -> Result<Shader, Error> {
-    Shader::from_source(source, glow::VERTEX_SHADER)
+  pub fn from_vert_source(source: &str,name: &str) -> Result<Shader, Error> {
+    Shader::from_source(source, glow::VERTEX_SHADER,name)
   }
 
-  pub fn from_frag_source(source: &str) -> Result<Shader, Error> {
-    Shader::from_source(source, glow::FRAGMENT_SHADER)
+  pub fn from_frag_source(source: &str,name: &str) -> Result<Shader, Error> {
+    Shader::from_source(source, glow::FRAGMENT_SHADER,name)
   }
 }
 
@@ -169,7 +177,7 @@ impl Drop for Shader {
   }
 }
 
-fn shader_from_source(source: &str, shader_type: u32) -> Result<glow::Shader, Error> {
+fn shader_from_source(source: &str, shader_type: u32,name:&str) -> Result<glow::Shader, Error> {
   let shader = unsafe { GL.create_shader(shader_type).unwrap() };
 
   unsafe {
@@ -181,11 +189,7 @@ fn shader_from_source(source: &str, shader_type: u32) -> Result<glow::Shader, Er
 
   if !success {
     let info = unsafe { GL.get_shader_info_log(shader) };
-
-    return Err(Error::CompileError { message: info });
-  } else {
-    let info = unsafe { GL.get_shader_info_log(shader) };
-    println!("{}", info);
+    return Err(Error::CompileError { message: format!("{}{}",name,info) });
   }
   Ok(shader)
 }

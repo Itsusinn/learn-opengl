@@ -1,3 +1,5 @@
+pub mod ui;
+
 use once_cell::sync::OnceCell;
 
 #[derive(Debug)]

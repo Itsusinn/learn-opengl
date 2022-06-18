@@ -11,7 +11,7 @@ atomic_float = "0.1.0"
 serde = "1.0"
 # GL-Framework&UI
 sdl2 = { version = "*", features = ["bundled", "static-link"] }
-egui = "*"
+egui = "0.16.1"
 egui_sdl2_gl = "0.16.0"
 # GL
 glow = { version = "0.11.2"}
@@ -27,5 +27,10 @@ image = { version = "0.24.2",default-features = false,features = ["jpeg","png"]}
 # russimp = "1.0.1"
 gltf = "1.0.0"
 arcstr = "1.1.3"
+
 [build-dependencies]
 walkdir = "2.3.1"
+
+[profile.release]
+lto = true
+codegen-units = 1

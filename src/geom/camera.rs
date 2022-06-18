@@ -6,7 +6,7 @@ use super::input;
 
 pub struct Camera {
   // 摄像机的位置
-  eye: Point3<f32>,
+  pub eye: Point3<f32>,
   // 摄像机的看向
   toward: Vector3<f32>,
   // 摄像机朝上的方向
