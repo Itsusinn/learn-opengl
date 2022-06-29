@@ -224,8 +224,8 @@ impl Cube {
       vao,
       texture: vec![texture0],
       camera: Camera::new(na::Point3::new(0.0, 0.0, 0.0)),
-      light_pos: na::Vector3::<f32>::new(10.0,10.0,10.0),
-      light_color: na::Vector3::<f32>::new(1.0,1.0,1.0),
+      light_pos: na::Vector3::<f32>::new(10.0, 10.0, 10.0),
+      light_color: na::Vector3::<f32>::new(1.0, 1.0, 1.0),
     })
   }
 }
@@ -249,7 +249,9 @@ impl Scene for Cube {
       self.texture.get(0)?.bind();
       self.program.upload_mat4("vp_proj", &(proj_mat * view_mat));
       self.program.upload_mat4("m_proj", &model_mat);
-      self.program.upload_mat3("NormalMat", &nor_mat.try_into().unwrap());
+      self
+        .program
+        .upload_mat3("NormalMat", &nor_mat.try_into().unwrap());
       self.program.upload_vec3("lightPos", &self.light_pos);
       self.program.upload_vec3("lightColor", &self.light_color);
       self.program.upload_vec3("viewPos", &self.camera.eye.coords);
@@ -268,19 +270,19 @@ impl Scene for Cube {
     ArcStr::from("phong")
   }
 
-  fn render_window(&mut self,egui_ctx: &egui::CtxRef) {
+  fn render_window(&mut self, egui_ctx: &egui::CtxRef) {
     egui::Window::new("Phong光照设置")
-    .resizable(false)
-    .show(&egui_ctx, |ui| {
-      ui.horizontal(|ui| {
-        ui.label("点光源颜色");
-        let light = self.light_color.as_mut_slice();
-        ui.color_edit_button_rgb(light.try_into().unwrap())
+      .resizable(false)
+      .show(&egui_ctx, |ui| {
+        ui.horizontal(|ui| {
+          ui.label("点光源颜色");
+          let light = self.light_color.as_mut_slice();
+          ui.color_edit_button_rgb(light.try_into().unwrap())
+        });
+        ui.horizontal(|ui| {
+          ui.label("点光源位置");
+          ui::edit_vec3(ui, &mut self.light_pos, 5.0..=20.0);
+        });
       });
-      ui.horizontal(|ui| {
-        ui.label("点光源位置");
-        ui::edit_vec3(ui,&mut self.light_pos,5.0..=20.0);
-      });
-    });
   }
 }

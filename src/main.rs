@@ -33,7 +33,7 @@ pub mod scene;
 mod time;
 
 static GL: LateInit<glow::Context> = LateInit::new();
-
+ 
 fn main() -> Result<(), anyhow::Error> {
   let mut screen_width = 1920;
   let mut screen_height = 1200;

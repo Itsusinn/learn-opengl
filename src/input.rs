@@ -9,9 +9,9 @@ use std::sync::atomic::Ordering::SeqCst;
 
 use crate::time;
 
-static KEYMAP: Lazy<KeyMap> = Lazy::new(|| { KeyMap::new() });
-static MOUSE: Lazy<Mouse> = Lazy::new(|| { Mouse::new() });
-static COOLDOWN_MAP: Lazy<DashMap<Keycode, f32>> = Lazy::new(|| { DashMap::new() });
+static KEYMAP: Lazy<KeyMap> = Lazy::new(|| KeyMap::new());
+static MOUSE: Lazy<Mouse> = Lazy::new(|| Mouse::new());
+static COOLDOWN_MAP: Lazy<DashMap<Keycode, f32>> = Lazy::new(|| DashMap::new());
 
 struct Mouse {
   dx: AtomicI32,

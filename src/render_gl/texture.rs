@@ -3,8 +3,8 @@ use std::{io, path::PathBuf};
 use glow::HasContext;
 use thiserror::Error;
 
-use image::io::Reader as ImageReader;
 use crate::{resources::Resources, GL};
+use image::io::Reader as ImageReader;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -18,8 +18,6 @@ pub struct Texture {
 }
 impl Texture {
   pub fn new(path: PathBuf) -> Result<Texture, Error> {
-
-
     let img = ImageReader::open(path)?.decode().unwrap();
 
     let texture = unsafe { GL.create_texture().unwrap() };
@@ -42,15 +40,15 @@ impl Texture {
     unsafe {
       match img {
         image::DynamicImage::ImageRgb8(_)
-        |image::DynamicImage::ImageRgb16(_)
-        |image::DynamicImage::ImageRgb32F(_)  => {
+        | image::DynamicImage::ImageRgb16(_)
+        | image::DynamicImage::ImageRgb32F(_) => {
           upload_texture_data(img.width(), img.height(), 3, img.as_bytes())
-        },
+        }
         image::DynamicImage::ImageRgba8(_)
-        |image::DynamicImage::ImageRgba16(_)
-        |image::DynamicImage::ImageRgba32F(_) => {
+        | image::DynamicImage::ImageRgba16(_)
+        | image::DynamicImage::ImageRgba32F(_) => {
           upload_texture_data(img.width(), img.height(), 4, img.as_bytes())
-        },
+        }
         _ => unimplemented!(),
       }
     }
