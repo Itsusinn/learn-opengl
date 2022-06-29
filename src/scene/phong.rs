@@ -4,8 +4,9 @@ use glow::HasContext;
 
 use super::scene::Scene;
 use crate::geom::camera::Camera;
+use crate::render_gl::data::*;
 use crate::render_gl::debug::check_error;
-use crate::render_gl::{buffer, data, texture};
+use crate::render_gl::{buffer, texture};
 use crate::resources::Resources;
 use crate::{render_gl, GL};
 
@@ -13,11 +14,11 @@ use crate::{render_gl, GL};
 #[repr(C, packed)]
 struct Vertex {
   #[location = 0]
-  pos: data::f32_f32_f32,
+  pos: f32_f32_f32,
   #[location = 1]
-  tex: data::f32_f32,
+  tex: f32_f32,
   #[location = 2]
-  nor: data::f32_f32_f32,
+  nor: f32_f32_f32,
 }
 
 pub struct Cube {

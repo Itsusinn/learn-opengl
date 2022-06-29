@@ -19,11 +19,13 @@ render_gl_derive = { path = "lib/render_gl_derive" }
 # error-handling
 thiserror = "1.0"
 anyhow = "1.0"
+
 # math
-vec-2-10-10-10 = "0.1.2"
 nalgebra = "0.31.0"
+
 # assests
 image = { version = "0.24.2",default-features = false,features = ["jpeg","png"]}
+
 # russimp = "1.0.1"
 gltf = "1.0.0"
 arcstr = "1.1.3"
