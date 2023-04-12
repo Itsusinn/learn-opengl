@@ -87,9 +87,8 @@ impl u2_u10_u10_u10_rev_float {
     self.data = c;
   }
 
-  #[allow(unaligned_references)]
-  pub fn raw_value(&self) -> &u32 {
-    &self.data
+  pub fn raw_value(&self) -> u32 {
+    self.data
   }
   pub unsafe fn vertex_attrib_pointer(stride: usize, location: usize, offset: usize) {
     GL.enable_vertex_attrib_array(location as u32);
